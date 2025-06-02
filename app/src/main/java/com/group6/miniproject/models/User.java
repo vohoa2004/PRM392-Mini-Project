@@ -1,4 +1,4 @@
-package com.group6.miniproject;
+package com.group6.miniproject.models;
 
 public class User {
     private String username;
