@@ -19,6 +19,9 @@
             android:name=".SignupActivity"
             android:exported="false" />
         <activity
+            android:name=".InstructionActivity"
+            android:exported="false" />
+        <activity
             android:name=".SigninActivity"
             android:exported="true">
             <intent-filter>
