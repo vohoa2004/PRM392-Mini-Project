@@ -22,8 +22,8 @@ public class InstructionActivity extends AppCompatActivity {
 
         //Set OnClickListener for the button
         btnStart.setOnClickListener(v -> {
-            //Start the MainActivity
-            startActivity(new Intent(InstructionActivity.this, MainActivity.class));
+            //Start the BettingActivity instead of MainActivity
+            startActivity(new Intent(InstructionActivity.this, BettingActivity.class));
         });
     }
 

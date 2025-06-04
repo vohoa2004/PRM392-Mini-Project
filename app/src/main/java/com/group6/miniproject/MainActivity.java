@@ -11,6 +11,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.graphics.drawable.LayerDrawable;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +24,11 @@ public class MainActivity extends AppCompatActivity {
     private CheckBox checkBox1, checkBox2, checkBox3;
     private SeekBar seekBar1, seekBar2, seekBar3;
     private ImageView lineImageView;
+    private TextView tvBetInfo;
+    
+    private int selectedCharacter = -1; // -1: none, 0: mouse, 1: puppy, 2: turtle
+    private int betAmount = 0;
+    private int currentPoints = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +38,13 @@ public class MainActivity extends AppCompatActivity {
         
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_round);
+        
+        // Get betting information from intent
+        if (getIntent().hasExtra("selectedCharacter")) {
+            selectedCharacter = getIntent().getIntExtra("selectedCharacter", -1);
+            betAmount = getIntent().getIntExtra("betAmount", 0);
+            currentPoints = getIntent().getIntExtra("currentPoints", 0);
+        }
         
         // Initialize checkboxes
         checkBox1 = findViewById(R.id.checkBox);
@@ -45,6 +58,12 @@ public class MainActivity extends AppCompatActivity {
         
         // Initialize line image
         lineImageView = findViewById(R.id.imageView2);
+        
+        // Initialize bet info text view
+        tvBetInfo = findViewById(R.id.tvBetInfo);
+        
+        // Display bet information
+        updateBetInfo();
         
         // Remove text from checkboxes
         checkBox1.setText("");
@@ -65,6 +84,45 @@ public class MainActivity extends AppCompatActivity {
         checkBox1.setVisibility(View.VISIBLE);
         checkBox2.setVisibility(View.VISIBLE);
         checkBox3.setVisibility(View.VISIBLE);
+        
+        // Auto-select the character based on betting selection
+        if (selectedCharacter != -1) {
+            CheckBox selectedCheckBox = null;
+            switch (selectedCharacter) {
+                case 0: // mouse
+                    selectedCheckBox = checkBox1;
+                    break;
+                case 1: // puppy
+                    selectedCheckBox = checkBox2;
+                    break;
+                case 2: // turtle
+                    selectedCheckBox = checkBox3;
+                    break;
+            }
+            
+            if (selectedCheckBox != null) {
+                selectedCheckBox.setChecked(true);
+            }
+        }
+    }
+    
+    private void updateBetInfo() {
+        if (tvBetInfo != null && betAmount > 0) {
+            String characterName = "Không xác định";
+            switch (selectedCharacter) {
+                case 0:
+                    characterName = "Chuột";
+                    break;
+                case 1:
+                    characterName = "Chó con";
+                    break;
+                case 2:
+                    characterName = "Rùa";
+                    break;
+            }
+            
+            tvBetInfo.setText("Đặt cược: " + betAmount + " điểm cho " + characterName);
+        }
     }
     
     private void preserveThumbAppearance(SeekBar seekBar) {
