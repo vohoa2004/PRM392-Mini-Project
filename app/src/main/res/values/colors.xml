@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <color name="checkbox_checked">#4CAF50</color>
+    <color name="checkbox_unchecked">#757575</color>
 </resources>

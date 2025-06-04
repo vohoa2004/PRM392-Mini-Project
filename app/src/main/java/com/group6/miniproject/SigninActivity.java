@@ -22,6 +22,7 @@ public class SigninActivity extends AppCompatActivity {
     static {
         accounts.add(new User("player1", "player123"));
         accounts.add(new User("player2", "player123"));
+        accounts.add(new User("1", "1"));
     }
 
     @Override
