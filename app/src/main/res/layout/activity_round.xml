@@ -7,12 +7,32 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="4dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/round1" />
+
+    <TextView
+        android:id="@+id/tvTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="#80000000"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp"
+        android:text="00:00"
+        android:textColor="#FFD700"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvBetInfo"
@@ -26,7 +46,33 @@
         android:textColor="#FFD700"
         android:textSize="18sp"
         android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/btnSettings"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Settings"
+        android:scaleType="fitCenter"
+        android:src="@drawable/setting"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnPlayPause"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="Play/Pause"
+        android:scaleType="fitCenter"
+        android:src="@drawable/play"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <CheckBox
@@ -67,7 +113,7 @@
 
     <SeekBar
         android:id="@+id/seekBar"
-        android:layout_width="631dp"
+        android:layout_width="670dp"
         android:layout_height="95dp"
         android:enabled="false"
         android:maxHeight="107dp"
@@ -86,7 +132,7 @@
 
     <SeekBar
         android:id="@+id/seekBar2"
-        android:layout_width="631dp"
+        android:layout_width="670dp"
         android:layout_height="96dp"
         android:enabled="false"
         android:maxHeight="107dp"
@@ -105,7 +151,7 @@
 
     <SeekBar
         android:id="@+id/seekBar3"
-        android:layout_width="631dp"
+        android:layout_width="670dp"
         android:layout_height="96dp"
         android:enabled="false"
         android:maxHeight="96dp"
