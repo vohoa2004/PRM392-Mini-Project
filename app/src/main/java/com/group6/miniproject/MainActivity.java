@@ -1,10 +1,15 @@
 package com.group6.miniproject;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
 import android.animation.ObjectAnimator;
@@ -29,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar seekBar1, seekBar2, seekBar3;
     private ImageView lineImageView;
     private TextView tvBetInfo;
+    private ImageButton btnPlayPause;
+    private ImageButton btnSettings;
     
     private boolean[] selectedAnimals;
     private int betAmount = 0;
@@ -36,6 +43,11 @@ public class MainActivity extends AppCompatActivity {
     private List<String> selectedAnimalNames = new ArrayList<>();
     private List<Integer> selectedAnimalIndices = new ArrayList<>();
     private Random random = new Random();
+    
+    // Race control variables
+    private boolean isRaceRunning = false;
+    private Handler handler = new Handler();
+    private Runnable raceRunnable;
     
     // Map animal indices to drawable resources
     private int[] animalDrawables = {
@@ -95,6 +107,12 @@ public class MainActivity extends AppCompatActivity {
         // Initialize bet info text view
         tvBetInfo = findViewById(R.id.tvBetInfo);
         
+        // Initialize play/pause button
+        btnPlayPause = findViewById(R.id.btnPlayPause);
+        
+        // Initialize settings button
+        btnSettings = findViewById(R.id.btnSettings);
+        
         // Get selected animal names and indices
         getSelectedAnimalInfo();
         
@@ -113,6 +131,256 @@ public class MainActivity extends AppCompatActivity {
         
         // Display bet information
         updateBetInfo();
+        
+        // Set up play/pause button
+        setupPlayPauseButton();
+        
+        // Set up settings button
+        setupSettingsButton();
+    }
+    
+    private void setupSettingsButton() {
+        btnSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSettingsDialog();
+            }
+        });
+    }
+    
+    private void showSettingsDialog() {
+        // Pause the race if it's running
+        if (isRaceRunning) {
+            pauseRace();
+        }
+        
+        // Create dialog with options
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Cài đặt");
+        
+        // Add options
+        String[] options = {"Âm lượng", "Hủy đặt cược và quay lại"};
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0: // Volume settings
+                        showVolumeSettingsDialog();
+                        break;
+                    case 1: // Cancel bet and return to betting screen
+                        confirmCancelBet();
+                        break;
+                }
+            }
+        });
+        
+        // Add cancel button
+        builder.setNegativeButton("Hủy", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        // Show the dialog
+        builder.show();
+    }
+    
+    private void showVolumeSettingsDialog() {
+        // This will be implemented in the future
+        // For now, just show a message
+        Toast.makeText(this, "Tính năng âm lượng sẽ được phát triển sau", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void confirmCancelBet() {
+        // Show confirmation dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Xác nhận");
+        builder.setMessage("Bạn có chắc muốn hủy đặt cược hiện tại và quay lại màn hình đặt cược?");
+        
+        // Add confirm button
+        builder.setPositiveButton("Xác nhận", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Return to betting screen
+                returnToBettingScreen();
+            }
+        });
+        
+        // Add cancel button
+        builder.setNegativeButton("Hủy", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        // Show the dialog
+        builder.show();
+    }
+    
+    private void returnToBettingScreen() {
+        // Stop any running animations
+        if (raceRunnable != null) {
+            handler.removeCallbacks(raceRunnable);
+        }
+        
+        // Start BettingActivity
+        Intent intent = new Intent(MainActivity.this, BettingActivity.class);
+        intent.putExtra("currentPoints", currentPoints);
+        startActivity(intent);
+        finish(); // Close current activity
+    }
+    
+    private void setupPlayPauseButton() {
+        btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isRaceRunning) {
+                    // Race is running, pause it
+                    pauseRace();
+                } else {
+                    // Race is not running, start it
+                    startRace();
+                }
+            }
+        });
+    }
+    
+    private void startRace() {
+        // Change button to pause
+        btnPlayPause.setImageResource(R.drawable.pause);
+        isRaceRunning = true;
+        
+        // Disable checkboxes during race
+        checkBox1.setEnabled(false);
+        checkBox2.setEnabled(false);
+        checkBox3.setEnabled(false);
+        
+        // Create and start race animation
+        raceRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Move animals if their checkboxes were checked
+                moveAnimal(seekBar1);
+                moveAnimal(seekBar2);
+                moveAnimal(seekBar3);
+                
+                // Check if race is finished
+                if (isRaceFinished()) {
+                    determineWinner();
+                    resetRace();
+                } else if (isRaceRunning) {
+                    // Continue race if it's still running
+                    handler.postDelayed(this, 100); // Update every 100ms
+                }
+            }
+        };
+        
+        // Start the race animation
+        handler.post(raceRunnable);
+        
+        // Show toast message
+        Toast.makeText(this, "Cuộc đua bắt đầu!", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void pauseRace() {
+        // Change button to play
+        btnPlayPause.setImageResource(R.drawable.play);
+        isRaceRunning = false;
+        
+        // Remove callbacks to stop animation
+        if (raceRunnable != null) {
+            handler.removeCallbacks(raceRunnable);
+        }
+        
+        // Show toast message
+        Toast.makeText(this, "Cuộc đua tạm dừng!", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void moveAnimal(SeekBar seekBar) {
+        // Get current progress
+        int currentProgress = seekBar.getProgress();
+        
+        // Calculate random movement (1-5 points)
+        int movement = random.nextInt(5) + 1;
+        
+        // Calculate new progress
+        int newProgress = Math.min(currentProgress + movement, seekBar.getMax());
+        
+        // Set new progress
+        seekBar.setProgress(newProgress);
+    }
+    
+    private boolean isRaceFinished() {
+        // Check if any animal has reached the finish line
+        return seekBar1.getProgress() >= seekBar1.getMax() ||
+               seekBar2.getProgress() >= seekBar2.getMax() ||
+               seekBar3.getProgress() >= seekBar3.getMax();
+    }
+    
+    private void determineWinner() {
+        // Find which animal reached the finish line first
+        int winner = -1;
+        int maxProgress = -1;
+        
+        if (seekBar1.getProgress() > maxProgress) {
+            maxProgress = seekBar1.getProgress();
+            winner = 0;
+        }
+        
+        if (seekBar2.getProgress() > maxProgress) {
+            maxProgress = seekBar2.getProgress();
+            winner = 1;
+        }
+        
+        if (seekBar3.getProgress() > maxProgress) {
+            maxProgress = seekBar3.getProgress();
+            winner = 2;
+        }
+        
+        // Check if player won
+        boolean playerWon = false;
+        
+        if (winner == 0 && checkBox1.isChecked()) {
+            playerWon = true;
+        } else if (winner == 1 && checkBox2.isChecked()) {
+            playerWon = true;
+        } else if (winner == 2 && checkBox3.isChecked()) {
+            playerWon = true;
+        }
+        
+        // Update points and show result
+        if (playerWon) {
+            currentPoints += betAmount;
+            Toast.makeText(this, "Chúc mừng! Bạn đã thắng " + betAmount + " điểm!", Toast.LENGTH_LONG).show();
+        } else {
+            currentPoints -= betAmount;
+            Toast.makeText(this, "Tiếc quá! Bạn đã thua " + betAmount + " điểm!", Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    private void resetRace() {
+        // Reset race state
+        isRaceRunning = false;
+        btnPlayPause.setImageResource(R.drawable.play);
+        
+        // Reset seekbars
+        seekBar1.setProgress(0);
+        seekBar2.setProgress(0);
+        seekBar3.setProgress(0);
+        
+        // Re-enable checkboxes for selected animals
+        if (!selectedAnimalIndices.isEmpty()) {
+            // Check which seekbar has the selected animal and enable its checkbox
+            if (checkBox1.isChecked()) {
+                checkBox1.setEnabled(true);
+            } else if (checkBox2.isChecked()) {
+                checkBox2.setEnabled(true);
+            } else if (checkBox3.isChecked()) {
+                checkBox3.setEnabled(true);
+            }
+        }
     }
     
     private void getSelectedAnimalInfo() {
@@ -266,5 +534,14 @@ public class MainActivity extends AppCompatActivity {
                 // Optional: Add any behavior when user stops moving seekbar
             }
         });
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Make sure to remove any callbacks to prevent memory leaks
+        if (raceRunnable != null) {
+            handler.removeCallbacks(raceRunnable);
+        }
     }
 }
