@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
@@ -13,9 +15,17 @@ import android.widget.SeekBar;
 import android.widget.Toast;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.graphics.drawable.LayerDrawable;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Switch;
+import android.widget.CompoundButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,6 +43,14 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar seekBar1, seekBar2, seekBar3;
     private ImageView lineImageView;
     private TextView tvBetInfo;
+    private TextView tvTimer;
+    private ImageButton btnSettings, btnPlayPause;
+    private boolean isPlaying = false;
+    
+    // Settings variables
+    private int volumeLevel = 80; // Default volume level (0-100)
+    private boolean vibrationEnabled = true;
+    private int difficultyLevel = 1; // 0: Easy, 1: Normal, 2: Hard
     
     private boolean[] selectedAnimals;
     private int betAmount = 0;
@@ -40,6 +58,13 @@ public class MainActivity extends AppCompatActivity {
     private List<String> selectedAnimalNames = new ArrayList<>();
     private List<Integer> selectedAnimalIndices = new ArrayList<>();
     private Random random = new Random();
+    
+    // Race animation variables
+    private ObjectAnimator animator1, animator2, animator3;
+    private Handler timerHandler = new Handler(Looper.getMainLooper());
+    private long startTime = 0;
+    private boolean raceFinished = false;
+    private int winningAnimalPosition = -1; // 0 for first, 1 for second, 2 for third
     
     // Map animal indices to drawable resources
     private int[] animalDrawables = {
@@ -65,6 +90,24 @@ public class MainActivity extends AppCompatActivity {
         "Rùa",      // 6: Turtle
         "Chuột",    // 7: Mouse
         "Sóc"       // 8: Squirrel
+    };
+    
+    // Timer runnable for updating the timer display
+    private Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (isPlaying && !raceFinished) {
+                long millis = System.currentTimeMillis() - startTime;
+                int seconds = (int) (millis / 1000);
+                int minutes = seconds / 60;
+                seconds = seconds % 60;
+                
+                tvTimer.setText(String.format("%02d:%02d", minutes, seconds));
+                
+                // Schedule the next update in 100ms
+                timerHandler.postDelayed(this, 100);
+            }
+        }
     };
 
     @Override
@@ -96,8 +139,16 @@ public class MainActivity extends AppCompatActivity {
         // Initialize line image
         lineImageView = findViewById(R.id.imageView2);
         
-        // Initialize bet info text view
+        // Initialize bet info text view and timer
         tvBetInfo = findViewById(R.id.tvBetInfo);
+        tvTimer = findViewById(R.id.tvTimer);
+        
+        // Initialize buttons
+        btnSettings = findViewById(R.id.btnSettings);
+        btnPlayPause = findViewById(R.id.btnPlayPause);
+        
+        // Set up button click listeners
+        setupButtonListeners();
         
         // Get selected animal names and indices
         getSelectedAnimalInfo();
@@ -117,6 +168,326 @@ public class MainActivity extends AppCompatActivity {
         
         // Display bet information
         updateBetInfo();
+        
+        // Initialize timer
+        tvTimer.setText("00:00");
+    }
+    
+    private void setupButtonListeners() {
+        // Settings button click listener
+        btnSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Show settings dialog
+                showSettingsDialog();
+            }
+        });
+        
+        // Play/Pause button click listener
+        btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isPlaying = !isPlaying;
+                
+                // Update button image based on state
+                if (isPlaying) {
+                    btnPlayPause.setImageResource(R.drawable.pause);
+                    startRace();
+                } else {
+                    btnPlayPause.setImageResource(R.drawable.play);
+                    pauseRace();
+                }
+            }
+        });
+    }
+    
+    private void showSettingsDialog() {
+        // Create dialog builder
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Cài đặt");
+        
+        // Inflate custom layout for the dialog
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_settings, null);
+        builder.setView(dialogView);
+        
+        // Get references to the views in the dialog
+        final SeekBar seekBarVolume = dialogView.findViewById(R.id.seekbar_volume);
+        final TextView tvVolumeValue = dialogView.findViewById(R.id.tv_volume_value);
+        final Switch switchVibration = dialogView.findViewById(R.id.switch_vibration);
+        final RadioGroup radioGroupDifficulty = dialogView.findViewById(R.id.radio_group_difficulty);
+        final RadioButton radioEasy = dialogView.findViewById(R.id.radio_easy);
+        final RadioButton radioNormal = dialogView.findViewById(R.id.radio_normal);
+        final RadioButton radioHard = dialogView.findViewById(R.id.radio_hard);
+        Button btnAbout = dialogView.findViewById(R.id.btn_about);
+        
+        // Set initial values based on current settings
+        seekBarVolume.setProgress(volumeLevel);
+        tvVolumeValue.setText(volumeLevel + "%");
+        switchVibration.setChecked(vibrationEnabled);
+        
+        // Set the correct radio button based on difficulty level
+        switch (difficultyLevel) {
+            case 0:
+                radioEasy.setChecked(true);
+                break;
+            case 1:
+                radioNormal.setChecked(true);
+                break;
+            case 2:
+                radioHard.setChecked(true);
+                break;
+        }
+        
+        // Set listeners for the settings controls
+        seekBarVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                volumeLevel = progress;
+                tvVolumeValue.setText(progress + "%");
+                applyVolumeSettings();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // Not needed
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // Not needed
+            }
+        });
+        
+        switchVibration.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                vibrationEnabled = isChecked;
+                // Apply vibration setting
+                applyVibrationSetting();
+            }
+        });
+        
+        radioGroupDifficulty.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if (checkedId == R.id.radio_easy) {
+                    difficultyLevel = 0;
+                } else if (checkedId == R.id.radio_normal) {
+                    difficultyLevel = 1;
+                } else if (checkedId == R.id.radio_hard) {
+                    difficultyLevel = 2;
+                }
+                // Apply difficulty setting
+                applyDifficultySetting();
+            }
+        });
+        
+        btnAbout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAboutDialog();
+            }
+        });
+        
+        // Add close button
+        builder.setPositiveButton("Đóng", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
+    private void showAboutDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Thông tin");
+        builder.setMessage("Ứng dụng đua thú\nPhiên bản 1.0\n\nNhóm 6 - PRM392\n\n© 2024 Đại học FPT");
+        builder.setPositiveButton("Đóng", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.show();
+    }
+    
+    private void applyVolumeSettings() {
+        // Implement volume setting logic
+        Toast.makeText(this, "Âm lượng: " + volumeLevel + "%", Toast.LENGTH_SHORT).show();
+        // Here you would actually adjust the app's volume
+    }
+    
+    private void applyVibrationSetting() {
+        // Implement vibration setting logic
+        Toast.makeText(this, "Rung: " + (vibrationEnabled ? "Bật" : "Tắt"), Toast.LENGTH_SHORT).show();
+    }
+    
+    private void applyDifficultySetting() {
+        // Implement difficulty setting logic
+        String difficultyText;
+        switch (difficultyLevel) {
+            case 0:
+                difficultyText = "Dễ";
+                break;
+            case 1:
+                difficultyText = "Thường";
+                break;
+            case 2:
+                difficultyText = "Khó";
+                break;
+            default:
+                difficultyText = "Thường";
+        }
+        Toast.makeText(this, "Độ khó: " + difficultyText, Toast.LENGTH_SHORT).show();
+    }
+    
+    private void startRace() {
+        if (raceFinished) {
+            // If race is already finished, reset everything for a new race
+            resetRace();
+        }
+        
+        // Start the timer
+        startTime = System.currentTimeMillis();
+        timerHandler.postDelayed(timerRunnable, 0);
+        
+        // Animate the seekbars to simulate race
+        animateRace();
+    }
+    
+    private void pauseRace() {
+        // Pause the timer
+        timerHandler.removeCallbacks(timerRunnable);
+        
+        // Pause the animations
+        if (animator1 != null && animator1.isRunning()) {
+            animator1.pause();
+        }
+        if (animator2 != null && animator2.isRunning()) {
+            animator2.pause();
+        }
+        if (animator3 != null && animator3.isRunning()) {
+            animator3.pause();
+        }
+    }
+    
+    private void resetRace() {
+        // Reset race state
+        raceFinished = false;
+        winningAnimalPosition = -1;
+        
+        // Reset seekbar progress
+        seekBar1.setProgress(0);
+        seekBar2.setProgress(0);
+        seekBar3.setProgress(0);
+        
+        // Reset timer
+        tvTimer.setText("00:00");
+        
+        // Cancel any running animations
+        if (animator1 != null) {
+            animator1.cancel();
+        }
+        if (animator2 != null) {
+            animator2.cancel();
+        }
+        if (animator3 != null) {
+            animator3.cancel();
+        }
+    }
+    
+    private void animateRace() {
+        // Generate random durations for each animal (between 5-10 seconds)
+        int duration1 = 5000 + random.nextInt(5000);
+        int duration2 = 5000 + random.nextInt(5000);
+        int duration3 = 5000 + random.nextInt(5000);
+        
+        // Create progress animations for each seekbar
+        animator1 = ObjectAnimator.ofInt(seekBar1, "progress", 0, 100);
+        animator1.setDuration(duration1);
+        
+        animator2 = ObjectAnimator.ofInt(seekBar2, "progress", 0, 100);
+        animator2.setDuration(duration2);
+        
+        animator3 = ObjectAnimator.ofInt(seekBar3, "progress", 0, 100);
+        animator3.setDuration(duration3);
+        
+        // Add listeners to detect which animal finishes first
+        animator1.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                checkRaceFinished(0);
+            }
+        });
+        
+        animator2.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                checkRaceFinished(1);
+            }
+        });
+        
+        animator3.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                checkRaceFinished(2);
+            }
+        });
+        
+        // Start the animations
+        animator1.start();
+        animator2.start();
+        animator3.start();
+    }
+    
+    private synchronized void checkRaceFinished(int animalPosition) {
+        if (!raceFinished) {
+            // This is the first animal to finish
+            raceFinished = true;
+            winningAnimalPosition = animalPosition;
+            
+            // Stop the timer
+            timerHandler.removeCallbacks(timerRunnable);
+            
+            // Stop the other animations
+            if (animalPosition != 0 && animator1 != null) {
+                animator1.cancel();
+            }
+            if (animalPosition != 1 && animator2 != null) {
+                animator2.cancel();
+            }
+            if (animalPosition != 2 && animator3 != null) {
+                animator3.cancel();
+            }
+            
+            // Reset play button state
+            isPlaying = false;
+            btnPlayPause.setImageResource(R.drawable.play);
+            
+            // Check if player won
+            boolean playerWon = false;
+            
+            if (animalPosition == 0 && checkBox1.isChecked()) {
+                playerWon = true;
+            } else if (animalPosition == 1 && checkBox2.isChecked()) {
+                playerWon = true;
+            } else if (animalPosition == 2 && checkBox3.isChecked()) {
+                playerWon = true;
+            }
+            
+            // Show the results after a short delay
+            final boolean finalPlayerWon = playerWon;
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    updatePointsAndShowResult(finalPlayerWon);
+                }
+            }, 1000);
+        }
     }
     
     private void getSelectedAnimalInfo() {
