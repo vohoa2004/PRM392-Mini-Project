@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Nền của thanh tiến trình (track background) - trong suốt -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="#00000000" /> <!-- Trong suốt -->
+            <size android:height="3dp" />
+        </shape>
+    </item>
+    
+    <!-- Phần đã hoàn thành (progress) - đường kẻ liên tục -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <solid android:color="#FF5722" /> <!-- Màu cam -->
+                <size android:height="3dp" />
+            </shape>
+        </clip>
+    </item>
+</layer-list> 

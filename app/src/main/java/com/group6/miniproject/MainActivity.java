@@ -19,6 +19,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 public class MainActivity extends AppCompatActivity {
 
     private CheckBox checkBox1, checkBox2, checkBox3;
@@ -26,9 +30,38 @@ public class MainActivity extends AppCompatActivity {
     private ImageView lineImageView;
     private TextView tvBetInfo;
     
-    private int selectedCharacter = -1; // -1: none, 0: mouse, 1: puppy, 2: turtle
+    private boolean[] selectedAnimals;
     private int betAmount = 0;
     private int currentPoints = 0;
+    private List<String> selectedAnimalNames = new ArrayList<>();
+    private List<Integer> selectedAnimalIndices = new ArrayList<>();
+    private Random random = new Random();
+    
+    // Map animal indices to drawable resources
+    private int[] animalDrawables = {
+        R.drawable.bee,      // 0: Bee
+        R.drawable.puppy,    // 1: Puppy
+        R.drawable.dolphin,  // 2: Dolphin
+        R.drawable.frog,     // 3: Frog
+        R.drawable.seal,     // 4: Seal
+        R.drawable.snail,    // 5: Snail
+        R.drawable.turtle,   // 6: Turtle
+        R.drawable.mouse,    // 7: Mouse
+        R.drawable.squirl    // 8: Squirrel
+    };
+    
+    // Map animal indices to names
+    private String[] animalNames = {
+        "Ong",      // 0: Bee
+        "Chó con",  // 1: Puppy
+        "Cá heo",   // 2: Dolphin
+        "Ếch",      // 3: Frog
+        "Hải cẩu",  // 4: Seal
+        "Ốc sên",   // 5: Snail
+        "Rùa",      // 6: Turtle
+        "Chuột",    // 7: Mouse
+        "Sóc"       // 8: Squirrel
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +73,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_round);
         
         // Get betting information from intent
-        if (getIntent().hasExtra("selectedCharacter")) {
-            selectedCharacter = getIntent().getIntExtra("selectedCharacter", -1);
+        if (getIntent().hasExtra("selectedAnimals")) {
+            selectedAnimals = getIntent().getBooleanArrayExtra("selectedAnimals");
             betAmount = getIntent().getIntExtra("betAmount", 0);
             currentPoints = getIntent().getIntExtra("currentPoints", 0);
         }
@@ -62,8 +95,8 @@ public class MainActivity extends AppCompatActivity {
         // Initialize bet info text view
         tvBetInfo = findViewById(R.id.tvBetInfo);
         
-        // Display bet information
-        updateBetInfo();
+        // Get selected animal names and indices
+        getSelectedAnimalInfo();
         
         // Remove text from checkboxes
         checkBox1.setText("");
@@ -75,53 +108,118 @@ public class MainActivity extends AppCompatActivity {
         preserveThumbAppearance(seekBar2);
         preserveThumbAppearance(seekBar3);
         
-        // Set up checkbox and seekbar connections
-        setupCheckboxAndSeekbar(checkBox1, seekBar1);
-        setupCheckboxAndSeekbar(checkBox2, seekBar2);
-        setupCheckboxAndSeekbar(checkBox3, seekBar3);
+        // Set up race animals and UI
+        setupRaceAnimals();
         
-        // Make checkboxes visible (in case they're not)
-        checkBox1.setVisibility(View.VISIBLE);
-        checkBox2.setVisibility(View.VISIBLE);
-        checkBox3.setVisibility(View.VISIBLE);
+        // Display bet information
+        updateBetInfo();
+    }
+    
+    private void getSelectedAnimalInfo() {
+        selectedAnimalNames.clear();
+        selectedAnimalIndices.clear();
         
-        // Auto-select the character based on betting selection
-        if (selectedCharacter != -1) {
-            CheckBox selectedCheckBox = null;
-            switch (selectedCharacter) {
-                case 0: // mouse
-                    selectedCheckBox = checkBox1;
-                    break;
-                case 1: // puppy
-                    selectedCheckBox = checkBox2;
-                    break;
-                case 2: // turtle
-                    selectedCheckBox = checkBox3;
-                    break;
-            }
-            
-            if (selectedCheckBox != null) {
-                selectedCheckBox.setChecked(true);
+        if (selectedAnimals != null) {
+            for (int i = 0; i < selectedAnimals.length; i++) {
+                if (selectedAnimals[i]) {
+                    selectedAnimalNames.add(animalNames[i]);
+                    selectedAnimalIndices.add(i);
+                }
             }
         }
     }
     
+    private void setupRaceAnimals() {
+        // Create a list of all possible animal indices (0-8)
+        List<Integer> allAnimalIndices = new ArrayList<>();
+        for (int i = 0; i < 9; i++) {
+            allAnimalIndices.add(i);
+        }
+        
+        // Remove selected animals from the pool to avoid duplicates
+        allAnimalIndices.removeAll(selectedAnimalIndices);
+        
+        // Create a list to hold the final 3 animals for the race
+        List<Integer> raceAnimalIndices = new ArrayList<>();
+        
+        // First, add selected animal (if any)
+        if (!selectedAnimalIndices.isEmpty()) {
+            // If multiple animals were selected, choose one randomly
+            int randomSelectedIndex = random.nextInt(selectedAnimalIndices.size());
+            int selectedAnimalIndex = selectedAnimalIndices.get(randomSelectedIndex);
+            raceAnimalIndices.add(selectedAnimalIndex);
+        }
+        
+        // Fill the remaining slots with random animals
+        while (raceAnimalIndices.size() < 3 && !allAnimalIndices.isEmpty()) {
+            int randomIndex = random.nextInt(allAnimalIndices.size());
+            raceAnimalIndices.add(allAnimalIndices.get(randomIndex));
+            allAnimalIndices.remove(randomIndex);
+        }
+        
+        // Ensure we have exactly 3 animals
+        while (raceAnimalIndices.size() < 3) {
+            // In case we don't have enough animals, just add random indices
+            raceAnimalIndices.add(random.nextInt(9));
+        }
+        
+        // Set all checkboxes to unchecked and disabled by default
+        checkBox1.setChecked(false);
+        checkBox2.setChecked(false);
+        checkBox3.setChecked(false);
+        checkBox1.setEnabled(false);
+        checkBox2.setEnabled(false);
+        checkBox3.setEnabled(false);
+        
+        // Set the thumbs for the three seekbars based on selected animals
+        setSeekBarThumb(seekBar1, raceAnimalIndices.get(0));
+        setSeekBarThumb(seekBar2, raceAnimalIndices.get(1));
+        setSeekBarThumb(seekBar3, raceAnimalIndices.get(2));
+        
+        // If we have a selected animal, check its checkbox and enable it
+        if (!selectedAnimalIndices.isEmpty()) {
+            int selectedAnimalIndex = raceAnimalIndices.get(0);
+            
+            // Check which seekbar has the selected animal
+            if (selectedAnimalIndices.contains(selectedAnimalIndex)) {
+                checkBox1.setChecked(true);
+                checkBox1.setEnabled(true);
+                setupCheckboxAndSeekbar(checkBox1, seekBar1);
+            } else if (selectedAnimalIndices.contains(raceAnimalIndices.get(1))) {
+                checkBox2.setChecked(true);
+                checkBox2.setEnabled(true);
+                setupCheckboxAndSeekbar(checkBox2, seekBar2);
+            } else if (selectedAnimalIndices.contains(raceAnimalIndices.get(2))) {
+                checkBox3.setChecked(true);
+                checkBox3.setEnabled(true);
+                setupCheckboxAndSeekbar(checkBox3, seekBar3);
+            }
+        }
+    }
+    
+    private void setSeekBarThumb(SeekBar seekBar, int animalIndex) {
+        // Set the thumb drawable to the corresponding animal
+        if (animalIndex >= 0 && animalIndex < animalDrawables.length) {
+            seekBar.setThumb(getResources().getDrawable(animalDrawables[animalIndex], getTheme()));
+        }
+    }
+    
     private void updateBetInfo() {
-        if (tvBetInfo != null && betAmount > 0) {
-            String characterName = "Không xác định";
-            switch (selectedCharacter) {
-                case 0:
-                    characterName = "Chuột";
-                    break;
-                case 1:
-                    characterName = "Chó con";
-                    break;
-                case 2:
-                    characterName = "Rùa";
-                    break;
+        if (tvBetInfo != null && betAmount > 0 && !selectedAnimalNames.isEmpty()) {
+            StringBuilder animalText = new StringBuilder();
+            for (int i = 0; i < selectedAnimalNames.size(); i++) {
+                if (i > 0) {
+                    if (i == selectedAnimalNames.size() - 1) {
+                        animalText.append(" và ");
+                    } else {
+                        animalText.append(", ");
+                    }
+                }
+                animalText.append(selectedAnimalNames.get(i));
             }
             
-            tvBetInfo.setText("Đặt cược: " + betAmount + " điểm cho " + characterName);
+            String betText = String.format("Cược: %d điểm - %s", betAmount, animalText.toString());
+            tvBetInfo.setText(betText);
         }
     }
     
@@ -139,11 +237,6 @@ public class MainActivity extends AppCompatActivity {
             if (isChecked) {
                 // Just set progress without modifying the thumb
                 seekBar.setProgress(0);
-                
-                // Nếu là seekBar3 (rùa), thêm hiệu ứng đường kẻ chạy
-                if (seekBar == seekBar3) {
-                    animateLineEffect(seekBar);
-                }
             } else {
                 // Just reset progress without modifying the thumb
                 seekBar.setProgress(0);
@@ -161,13 +254,11 @@ public class MainActivity extends AppCompatActivity {
                 if (fromUser && !checkBox.isChecked()) {
                     checkBox.setChecked(true);
                 }
-
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 // Make sure checkbox is checked when user starts using seekbar
-
             }
 
             @Override
@@ -175,25 +266,5 @@ public class MainActivity extends AppCompatActivity {
                 // Optional: Add any behavior when user stops moving seekbar
             }
         });
-    }
-    
-    // Phương thức tạo hiệu ứng đường kẻ chạy
-    private void animateLineEffect(final SeekBar seekBar) {
-
-        ObjectAnimator progressAnimator = ObjectAnimator.ofInt(seekBar, "progress", 0, 70);
-        progressAnimator.setDuration(3000); // 3 giây
-        progressAnimator.start();
-        
-        // Nếu có hình ảnh đường kẻ, thêm hiệu ứng cho nó
-        if (lineImageView != null) {
-            // Tạo hiệu ứng alpha (mờ dần hiện rõ)
-            ValueAnimator alphaAnimator = ValueAnimator.ofFloat(0.3f, 1.0f);
-            alphaAnimator.setDuration(3000);
-            alphaAnimator.addUpdateListener(animation -> {
-                float value = (float) animation.getAnimatedValue();
-                lineImageView.setAlpha(value);
-            });
-            alphaAnimator.start();
-        }
     }
 }

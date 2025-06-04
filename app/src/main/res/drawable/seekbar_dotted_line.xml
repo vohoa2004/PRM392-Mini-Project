@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Nền của thanh tiến trình - đường mờ -->
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="0dp" />
+            <solid android:color="#40000000" />
+            <size android:height="1dp" />
+        </shape>
+    </item>
+    
+    <!-- Phần đã hoàn thành - trong suốt (xóa đường xám) -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <corners android:radius="0dp" />
+                <solid android:color="#00000000" /> <!-- Hoàn toàn trong suốt -->
+                <size android:height="1dp" />
+            </shape>
+        </clip>
+    </item>
+</layer-list> 
