@@ -53,7 +53,7 @@ public class SigninActivity extends AppCompatActivity {
         for (User account : accounts) {
             if (account.getUsername().equals(username) && account.getPassword().equals(password)) {
                 Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(SigninActivity.this, MainActivity.class));
+                startActivity(new Intent(SigninActivity.this, InstructionActivity.class));
                 finish();
                 return;
             }
