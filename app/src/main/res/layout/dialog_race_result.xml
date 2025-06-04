@@ -1,55 +1,220 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@android:color/white">
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/tv_result_message"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Chúc mừng! Bạn đã thắng"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/tv_points_change"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="+100 điểm"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="8dp" />
+        <!-- Race Results Title (Moved to the top) -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="KẾT QUẢ CUỘC ĐUA"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:background="#80000000"
+            android:padding="6dp" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#CCCCCC"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp" />
+        <!-- Points change -->
+        <TextView
+            android:id="@+id/tv_points_change"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="+8 điểm"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#00CC00"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp" />
 
-    <TextView
-        android:id="@+id/tv_current_points"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Số điểm hiện tại: 1000"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:textColor="#FFD700"
-        android:layout_marginTop="8dp" />
+        <!-- Race Rankings - Horizontal Layout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp">
 
-    <ImageView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_gravity="center"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
-        android:src="@drawable/iconingame" />
+            <!-- First Place -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
 
-</LinearLayout> 
+                <ImageView
+                    android:id="@+id/iv_rank1"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/rank1"
+                    android:contentDescription="First Place" />
+
+                <ImageView
+                    android:id="@+id/iv_rank1_animal"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/puppy"
+                    android:contentDescription="Animal"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/tv_rank1_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chó con"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/tv_rank1_time_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:05:23"
+                    android:textSize="14sp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <!-- Second Place -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/iv_rank2"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/rank2"
+                    android:contentDescription="Second Place" />
+
+                <ImageView
+                    android:id="@+id/iv_rank2_animal"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/frog"
+                    android:contentDescription="Animal"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/tv_rank2_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ếch"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/tv_rank2_time_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:06:45"
+                    android:textSize="14sp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+
+            <!-- Third Place -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/iv_rank3"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/rank3"
+                    android:contentDescription="Third Place" />
+
+                <ImageView
+                    android:id="@+id/iv_rank3_animal"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/frog"
+                    android:contentDescription="Animal"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:id="@+id/tv_rank3_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ếch"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/tv_rank3_time_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:07:12"
+                    android:textSize="14sp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Current Points -->
+        <TextView
+            android:id="@+id/tv_current_points"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Số điểm hiện tại: 1008"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#FFD700"
+            android:background="#80000000"
+            android:padding="6dp" />
+
+        <!-- Dialog Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
+
+            <Button
+                android:id="@+id/btn_bet_again"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="45dp"
+                android:text="ĐẶT CƯỢC LẠI"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="#673AB7"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_continue"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="45dp"
+                android:text="TIẾP TỤC"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="#673AB7"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="16dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView> 

@@ -34,6 +34,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -91,6 +92,9 @@ public class MainActivity extends AppCompatActivity {
         "Chuột",    // 7: Mouse
         "Sóc"       // 8: Squirrel
     };
+    
+    // Store the indices of the animals used in the current race
+    private int[] raceAnimalIndices = new int[3];
     
     // Timer runnable for updating the timer display
     private Runnable timerRunnable = new Runnable() {
@@ -529,27 +533,27 @@ public class MainActivity extends AppCompatActivity {
         allAnimalIndices.removeAll(selectedAnimalIndices);
         
         // Create a list to hold the final 3 animals for the race
-        List<Integer> raceAnimalIndices = new ArrayList<>();
+        List<Integer> raceAnimalIndicesList = new ArrayList<>();
         
         // First, add selected animal (if any)
         if (!selectedAnimalIndices.isEmpty()) {
             // If multiple animals were selected, choose one randomly
             int randomSelectedIndex = random.nextInt(selectedAnimalIndices.size());
             int selectedAnimalIndex = selectedAnimalIndices.get(randomSelectedIndex);
-            raceAnimalIndices.add(selectedAnimalIndex);
+            raceAnimalIndicesList.add(selectedAnimalIndex);
         }
         
         // Fill the remaining slots with random animals
-        while (raceAnimalIndices.size() < 3 && !allAnimalIndices.isEmpty()) {
+        while (raceAnimalIndicesList.size() < 3 && !allAnimalIndices.isEmpty()) {
             int randomIndex = random.nextInt(allAnimalIndices.size());
-            raceAnimalIndices.add(allAnimalIndices.get(randomIndex));
+            raceAnimalIndicesList.add(allAnimalIndices.get(randomIndex));
             allAnimalIndices.remove(randomIndex);
         }
         
         // Ensure we have exactly 3 animals
-        while (raceAnimalIndices.size() < 3) {
+        while (raceAnimalIndicesList.size() < 3) {
             // In case we don't have enough animals, just add random indices
-            raceAnimalIndices.add(random.nextInt(9));
+            raceAnimalIndicesList.add(random.nextInt(9));
         }
         
         // Set all checkboxes to unchecked and disabled by default
@@ -561,36 +565,42 @@ public class MainActivity extends AppCompatActivity {
         checkBox3.setEnabled(false);
         
         // Set the thumbs for the three seekbars based on selected animals
-        setSeekBarThumb(seekBar1, raceAnimalIndices.get(0));
-        setSeekBarThumb(seekBar2, raceAnimalIndices.get(1));
-        setSeekBarThumb(seekBar3, raceAnimalIndices.get(2));
+        setSeekBarThumb(seekBar1, raceAnimalIndicesList.get(0));
+        setSeekBarThumb(seekBar2, raceAnimalIndicesList.get(1));
+        setSeekBarThumb(seekBar3, raceAnimalIndicesList.get(2));
         
         // If we have a selected animal, check its checkbox and enable it
         if (!selectedAnimalIndices.isEmpty()) {
-            int selectedAnimalIndex = raceAnimalIndices.get(0);
+            int selectedAnimalIndex = raceAnimalIndicesList.get(0);
             
             // Check which seekbar has the selected animal
             if (selectedAnimalIndices.contains(selectedAnimalIndex)) {
                 checkBox1.setChecked(true);
                 checkBox1.setEnabled(true);
                 setupCheckboxAndSeekbar(checkBox1, seekBar1);
-            } else if (selectedAnimalIndices.contains(raceAnimalIndices.get(1))) {
+            } else if (selectedAnimalIndices.contains(raceAnimalIndicesList.get(1))) {
                 checkBox2.setChecked(true);
                 checkBox2.setEnabled(true);
                 setupCheckboxAndSeekbar(checkBox2, seekBar2);
-            } else if (selectedAnimalIndices.contains(raceAnimalIndices.get(2))) {
+            } else if (selectedAnimalIndices.contains(raceAnimalIndicesList.get(2))) {
                 checkBox3.setChecked(true);
                 checkBox3.setEnabled(true);
                 setupCheckboxAndSeekbar(checkBox3, seekBar3);
             }
         }
+        
+        // Store the race animal indices
+        for (int i = 0; i < 3; i++) {
+            raceAnimalIndices[i] = raceAnimalIndicesList.get(i);
+        }
     }
     
     private void setSeekBarThumb(SeekBar seekBar, int animalIndex) {
-        // Set the thumb drawable to the corresponding animal
-        if (animalIndex >= 0 && animalIndex < animalDrawables.length) {
-            seekBar.setThumb(getResources().getDrawable(animalDrawables[animalIndex], getTheme()));
-        }
+        // Set the thumb drawable to the animal image
+        seekBar.setThumb(getResources().getDrawable(animalDrawables[animalIndex], getTheme()));
+        
+        // Store the animal index as a tag on the seekbar for easy retrieval
+        seekBar.setTag(animalIndex);
     }
     
     private void updateBetInfo() {
@@ -665,9 +675,23 @@ public class MainActivity extends AppCompatActivity {
         int pointsChange;
         String resultMessage;
         
+        // Apply difficulty multiplier to bet amount
+        int multiplier = 1;
+        switch (difficultyLevel) {
+            case 0: // Easy
+                multiplier = 1;
+                break;
+            case 1: // Normal
+                multiplier = 2;
+                break;
+            case 2: // Hard
+                multiplier = 3;
+                break;
+        }
+        
         // Update points based on win/loss
         if (playerWon) {
-            pointsChange = betAmount;
+            pointsChange = betAmount * multiplier;
             currentPoints += pointsChange;
             resultMessage = "Chúc mừng! Bạn đã thắng";
         } else {
@@ -689,25 +713,28 @@ public class MainActivity extends AppCompatActivity {
         // Create dialog builder
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         
-        // Set dialog title based on result
-        if (pointsChange > 0) {
-            builder.setTitle("Thắng cuộc!");
-        } else {
-            builder.setTitle("Thua cuộc!");
-        }
-        
         // Create custom layout for the dialog
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_race_result, null);
         builder.setView(dialogView);
         
         // Get references to the views in the dialog
-        TextView tvResultMessage = dialogView.findViewById(R.id.tv_result_message);
         TextView tvPointsChange = dialogView.findViewById(R.id.tv_points_change);
         TextView tvCurrentPoints = dialogView.findViewById(R.id.tv_current_points);
         
-        // Set the text for the views
-        tvResultMessage.setText(resultMessage);
+        // Get references to ranking views
+        TextView tvRank1Name = dialogView.findViewById(R.id.tv_rank1_name);
+        TextView tvRank2Name = dialogView.findViewById(R.id.tv_rank2_name);
+        TextView tvRank3Name = dialogView.findViewById(R.id.tv_rank3_name);
+        TextView tvRank1TimeValue = dialogView.findViewById(R.id.tv_rank1_time_value);
+        TextView tvRank2TimeValue = dialogView.findViewById(R.id.tv_rank2_time_value);
+        TextView tvRank3TimeValue = dialogView.findViewById(R.id.tv_rank3_time_value);
+        ImageView ivRank1Animal = dialogView.findViewById(R.id.iv_rank1_animal);
+        ImageView ivRank2Animal = dialogView.findViewById(R.id.iv_rank2_animal);
+        ImageView ivRank3Animal = dialogView.findViewById(R.id.iv_rank3_animal);
+        Button btnBetAgain = dialogView.findViewById(R.id.btn_bet_again);
+        Button btnContinue = dialogView.findViewById(R.id.btn_continue);
         
+        // Set the text for the views
         String pointsChangeText = (pointsChange > 0 ? "+" : "") + pointsChange + " điểm";
         tvPointsChange.setText(pointsChangeText);
         
@@ -721,10 +748,60 @@ public class MainActivity extends AppCompatActivity {
             tvPointsChange.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
         }
         
-        // Add continue button
-        builder.setPositiveButton("Tiếp tục", new DialogInterface.OnClickListener() {
+        // Determine the finishing order based on our race
+        // The first animal is the one that finished (winningAnimalPosition)
+        // We'll randomly assign the other positions
+        int[] finishOrder = new int[3]; // Stores the indices of seekbars in finish order
+        finishOrder[0] = winningAnimalPosition;
+        
+        // Randomly assign 2nd and 3rd places from the remaining animals
+        List<Integer> remainingPositions = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            if (i != winningAnimalPosition) {
+                remainingPositions.add(i);
+            }
+        }
+        // Shuffle the remaining positions
+        Collections.shuffle(remainingPositions, random);
+        finishOrder[1] = remainingPositions.get(0);
+        finishOrder[2] = remainingPositions.get(1);
+        
+        // Map the seekbar positions to animal indices
+        int[] animalIndices = new int[3];
+        animalIndices[0] = raceAnimalIndices[finishOrder[0]];
+        animalIndices[1] = raceAnimalIndices[finishOrder[1]];
+        animalIndices[2] = raceAnimalIndices[finishOrder[2]];
+        
+        // Set the animal names and images for each rank
+        tvRank1Name.setText(animalNames[animalIndices[0]]);
+        tvRank2Name.setText(animalNames[animalIndices[1]]);
+        tvRank3Name.setText(animalNames[animalIndices[2]]);
+        
+        ivRank1Animal.setImageResource(animalDrawables[animalIndices[0]]);
+        ivRank2Animal.setImageResource(animalDrawables[animalIndices[1]]);
+        ivRank3Animal.setImageResource(animalDrawables[animalIndices[2]]);
+        
+        // Generate finish times (winner has shortest time)
+        long raceTimeMillis = System.currentTimeMillis() - startTime;
+        int winnerSeconds = (int)(raceTimeMillis / 1000);
+        int winnerMillis = (int)((raceTimeMillis % 1000) / 10); // Convert to centiseconds (0-99)
+        int secondPlaceSeconds = winnerSeconds + random.nextInt(3) + 1; // 1-3 seconds more
+        int secondPlaceMillis = random.nextInt(100); // 0-99 centiseconds
+        int thirdPlaceSeconds = secondPlaceSeconds + random.nextInt(3) + 1; // 1-3 seconds more than second
+        int thirdPlaceMillis = random.nextInt(100); // 0-99 centiseconds
+        
+        tvRank1TimeValue.setText(String.format("%02d:%02d.%02d", winnerSeconds / 60, winnerSeconds % 60, winnerMillis));
+        tvRank2TimeValue.setText(String.format("%02d:%02d.%02d", secondPlaceSeconds / 60, secondPlaceSeconds % 60, secondPlaceMillis));
+        tvRank3TimeValue.setText(String.format("%02d:%02d.%02d", thirdPlaceSeconds / 60, thirdPlaceSeconds % 60, thirdPlaceMillis));
+        
+        // Create and show the dialog
+        final AlertDialog dialog = builder.create();
+        dialog.setCancelable(false); // Prevent dismissing by tapping outside
+        
+        // Set button click listeners
+        btnContinue.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(View v) {
                 dialog.dismiss();
                 
                 // Check if player is out of points
@@ -734,18 +811,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         
-        // Add return to betting button
-        builder.setNegativeButton("Đặt cược lại", new DialogInterface.OnClickListener() {
+        btnBetAgain.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(View v) {
                 dialog.dismiss();
                 returnToBettingScreen();
             }
         });
         
-        // Create and show the dialog
-        AlertDialog dialog = builder.create();
-        dialog.setCancelable(false); // Prevent dismissing by tapping outside
         dialog.show();
     }
     
