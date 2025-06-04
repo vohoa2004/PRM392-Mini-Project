@@ -1,6 +1,7 @@
 package com.group6.miniproject;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
@@ -28,6 +29,9 @@ public class SigninActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Force landscape orientation
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_signin);
 
