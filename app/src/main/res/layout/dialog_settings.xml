@@ -28,6 +28,40 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Cancel Betting Option -->
+    <LinearLayout
+        android:id="@+id/layout_cancel_betting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/cancel"
+            android:contentDescription="Cancel"
+            android:layout_marginEnd="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hủy đặt cược và quay lại"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#CCCCCC"
+        android:layout_marginBottom="16dp" />
+
     <!-- Sound Setting with SeekBar -->
     <LinearLayout
         android:layout_width="match_parent"

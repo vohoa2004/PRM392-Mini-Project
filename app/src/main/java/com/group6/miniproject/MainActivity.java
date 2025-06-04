@@ -211,6 +211,7 @@ public class MainActivity extends AppCompatActivity {
         builder.setView(dialogView);
         
         // Get references to the views in the dialog
+        final View layoutCancelBetting = dialogView.findViewById(R.id.layout_cancel_betting);
         final SeekBar seekBarVolume = dialogView.findViewById(R.id.seekbar_volume);
         final TextView tvVolumeValue = dialogView.findViewById(R.id.tv_volume_value);
         final Switch switchVibration = dialogView.findViewById(R.id.switch_vibration);
@@ -237,6 +238,20 @@ public class MainActivity extends AppCompatActivity {
                 radioHard.setChecked(true);
                 break;
         }
+        
+        // Create and show the dialog
+        final AlertDialog dialog = builder.create();
+        
+        // Set click listener for cancel betting option
+        layoutCancelBetting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Show confirmation dialog before canceling bet
+                showCancelBettingConfirmationDialog();
+                // Dismiss the settings dialog
+                dialog.dismiss();
+            }
+        });
         
         // Set listeners for the settings controls
         seekBarVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -297,8 +312,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         
-        // Create and show the dialog
-        AlertDialog dialog = builder.create();
+        // Show the dialog
         dialog.show();
     }
     
@@ -776,5 +790,29 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("currentPoints", currentPoints);
         startActivity(intent);
         finish(); // Close current activity
+    }
+    
+    private void showCancelBettingConfirmationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Xác nhận hủy cược");
+        builder.setMessage("Bạn có chắc chắn muốn hủy đặt cược hiện tại và quay lại màn hình đặt cược?");
+        builder.setIcon(R.drawable.cancel);
+        
+        builder.setPositiveButton("Có", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Return to betting screen
+                returnToBettingScreen();
+            }
+        });
+        
+        builder.setNegativeButton("Không", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        builder.show();
     }
 }
