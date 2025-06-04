@@ -1,8 +1,12 @@
 package com.group6.miniproject;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.SeekBar;
@@ -266,5 +270,140 @@ public class MainActivity extends AppCompatActivity {
                 // Optional: Add any behavior when user stops moving seekbar
             }
         });
+    }
+    
+    /**
+     * Updates points based on race result and shows a dialog
+     * @param playerWon true if player won, false otherwise
+     */
+    public void updatePointsAndShowResult(boolean playerWon) {
+        int pointsChange;
+        String resultMessage;
+        
+        // Update points based on win/loss
+        if (playerWon) {
+            pointsChange = betAmount;
+            currentPoints += pointsChange;
+            resultMessage = "Chúc mừng! Bạn đã thắng";
+        } else {
+            pointsChange = -betAmount;
+            currentPoints += pointsChange;
+            resultMessage = "Tiếc quá! Bạn đã thua";
+        }
+        
+        // Create and show the results dialog
+        showResultsDialog(resultMessage, pointsChange);
+    }
+    
+    /**
+     * Shows a dialog with race results and points information
+     * @param resultMessage The message to show (win/lose)
+     * @param pointsChange The points gained or lost
+     */
+    private void showResultsDialog(String resultMessage, int pointsChange) {
+        // Create dialog builder
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        
+        // Set dialog title based on result
+        if (pointsChange > 0) {
+            builder.setTitle("Thắng cuộc!");
+        } else {
+            builder.setTitle("Thua cuộc!");
+        }
+        
+        // Create custom layout for the dialog
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_race_result, null);
+        builder.setView(dialogView);
+        
+        // Get references to the views in the dialog
+        TextView tvResultMessage = dialogView.findViewById(R.id.tv_result_message);
+        TextView tvPointsChange = dialogView.findViewById(R.id.tv_points_change);
+        TextView tvCurrentPoints = dialogView.findViewById(R.id.tv_current_points);
+        
+        // Set the text for the views
+        tvResultMessage.setText(resultMessage);
+        
+        String pointsChangeText = (pointsChange > 0 ? "+" : "") + pointsChange + " điểm";
+        tvPointsChange.setText(pointsChangeText);
+        
+        String currentPointsText = "Số điểm hiện tại: " + currentPoints;
+        tvCurrentPoints.setText(currentPointsText);
+        
+        // Set text color based on win/loss
+        if (pointsChange > 0) {
+            tvPointsChange.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        } else {
+            tvPointsChange.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        }
+        
+        // Add continue button
+        builder.setPositiveButton("Tiếp tục", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                
+                // Check if player is out of points
+                if (currentPoints <= 0) {
+                    showGameOverDialog();
+                }
+            }
+        });
+        
+        // Add return to betting button
+        builder.setNegativeButton("Đặt cược lại", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                returnToBettingScreen();
+            }
+        });
+        
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false); // Prevent dismissing by tapping outside
+        dialog.show();
+    }
+    
+    /**
+     * Shows a game over dialog when player runs out of points
+     */
+    private void showGameOverDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Hết điểm!");
+        builder.setMessage("Bạn đã hết điểm. Bạn có muốn bắt đầu lại với 1000 điểm không?");
+        
+        // Add restart button
+        builder.setPositiveButton("Bắt đầu lại", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Reset points and return to betting screen
+                currentPoints = 1000;
+                returnToBettingScreen();
+            }
+        });
+        
+        // Add quit button
+        builder.setNegativeButton("Thoát", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish(); // Close the app
+            }
+        });
+        
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false); // Prevent dismissing by tapping outside
+        dialog.show();
+    }
+    
+    /**
+     * Returns to the betting screen with current points
+     */
+    private void returnToBettingScreen() {
+        // Start BettingActivity
+        Intent intent = new Intent(MainActivity.this, BettingActivity.class);
+        intent.putExtra("currentPoints", currentPoints);
+        startActivity(intent);
+        finish(); // Close current activity
     }
 }
