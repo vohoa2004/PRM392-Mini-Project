@@ -31,7 +31,7 @@ public class BettingActivity extends AppCompatActivity {
     private Map<Integer, Integer> animalResources = new HashMap<>();
     private Map<Integer, String> animalNames = new HashMap<>();
     
-    private int currentPoints = 1000; // Default starting points
+    private int currentPoints = 1000; // Default starting points only used if no points are passed
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +47,40 @@ public class BettingActivity extends AppCompatActivity {
         tvCurrentPoints = findViewById(R.id.tvCurrentPoints);
         btnPlaceBet = findViewById(R.id.btnPlaceBet);
         gridAnimals = findViewById(R.id.gridAnimals);
+        ImageButton btnStore = findViewById(R.id.btnStore);
+        
+        // Get current points from intent if available
+        if (getIntent().hasExtra("currentPoints")) {
+            currentPoints = getIntent().getIntExtra("currentPoints", currentPoints);
+        }
         
         // Set current points
+        updatePointsDisplay();
+        
+        // Set up store button
+        btnStore.setOnClickListener(v -> {
+            // Navigate to store activity
+            Intent intent = new Intent(BettingActivity.this, StoreActivity.class);
+            intent.putExtra("currentPoints", currentPoints);
+            startActivity(intent);
+        });
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Check for updated points in intent (may happen when returning from rounds)
+        if (getIntent().hasExtra("currentPoints")) {
+            currentPoints = getIntent().getIntExtra("currentPoints", currentPoints);
+            updatePointsDisplay();
+        }
+    }
+    
+    /**
+     * Updates the points display with the current value
+     */
+    private void updatePointsDisplay() {
         tvCurrentPoints.setText("Điểm: " + currentPoints);
         
         // Setup animal resources and names
@@ -190,5 +222,7 @@ public class BettingActivity extends AppCompatActivity {
         intent.putExtra("betAmount", betAmount);
         intent.putExtra("currentPoints", currentPoints);
         startActivity(intent);
+        
+        
     }
 } 

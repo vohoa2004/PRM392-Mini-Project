@@ -737,7 +737,7 @@ public class Round2Activity extends AppCompatActivity {
             boolean isBet5x = getIntent().getBooleanExtra("bet5x", false);
             if (isBet5x) {
                 // If player chose 5x bet option in Round 1, they lose 5x the bet
-                pointsChange = -betAmount * 5;
+                pointsChange = -betAmount;
             }
             
             currentPoints += pointsChange;
@@ -837,24 +837,24 @@ public class Round2Activity extends AppCompatActivity {
         final AlertDialog dialog = builder.create();
         dialog.setCancelable(false); // Prevent dismissing by tapping outside
         
-        // Set button click listeners
-        btnContinue.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                
-                // Check if player is out of points
-                if (currentPoints <= 0) {
-                    showGameOverDialog();
-                }
-            }
-        });
+        // Hide the Continue button since we only need "Back to Betting" in Round 2
+        btnContinue.setVisibility(View.GONE);
         
+        // Change text of Bet Again button to make it clearer
+        btnBetAgain.setText("Quay lại đặt cược");
+        
+        // Set button click listeners
         btnBetAgain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
-                returnToBettingScreen();
+                
+                // Check if player is out of points before returning to betting screen
+                if (currentPoints <= 0) {
+                    showGameOverDialog();
+                } else {
+                    returnToBettingScreen();
+                }
             }
         });
         
