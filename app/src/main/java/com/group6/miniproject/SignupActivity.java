@@ -1,6 +1,7 @@
 package com.group6.miniproject;
 
 import android.content.pm.ActivityInfo;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
@@ -25,6 +26,9 @@ public class SignupActivity extends AppCompatActivity {
         
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_signup);
+        
+        // Initialize audio player
+        initializeMediaPlayer();
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
@@ -66,4 +70,33 @@ public class SignupActivity extends AppCompatActivity {
         
         finish();
     }
+    
+    /**
+     * Initializes the background music
+     */
+    private void initializeMediaPlayer() {
+        // Use the AudioManager singleton to play background music
+        // We don't force restart to ensure continuity from previous activity
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+    }
+    
+    /**
+     * Pauses the background music when activity is paused
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        AudioManager.getInstance().pauseMusic();
+    }
+    
+    /**
+     * Resumes the background music when activity is resumed
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AudioManager.getInstance().resumeMusic();
+    }
+    
+    // No need for onDestroy handling as the AudioManager is now shared
 }

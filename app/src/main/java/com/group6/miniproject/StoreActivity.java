@@ -2,6 +2,7 @@ package com.group6.miniproject;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,8 @@ public class StoreActivity extends AppCompatActivity {
     private LinearLayout orderItemsContainer;
     private TextView tvTotalCost;
     
+
+    
     private int currentPoints = 1000;
     
     // Prices for items
@@ -47,6 +50,9 @@ public class StoreActivity extends AppCompatActivity {
         // Force landscape orientation
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.activity_store);
+        
+        // Initialize audio player
+        initializeMediaPlayer();
         
         // Initialize views
         initViews();
@@ -304,4 +310,33 @@ public class StoreActivity extends AppCompatActivity {
             this.price = price;
         }
     }
+
+    /**
+     * Initializes the background music
+     */
+    private void initializeMediaPlayer() {
+        // Use the AudioManager singleton to play background music
+        // We don't force restart to ensure continuity from previous activity
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+    }
+    
+    /**
+     * Pauses the background music when activity is paused
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        AudioManager.getInstance().pauseMusic();
+    }
+    
+    /**
+     * Resumes the background music when activity is resumed
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AudioManager.getInstance().resumeMusic();
+    }
+    
+    // No need for onDestroy handling as the AudioManager is now shared
 } 

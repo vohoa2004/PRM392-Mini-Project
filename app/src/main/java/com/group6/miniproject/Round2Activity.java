@@ -7,6 +7,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -22,6 +23,7 @@ import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -43,6 +45,8 @@ public class Round2Activity extends AppCompatActivity {
     private TextView tvRound;
     private ImageButton btnSettings, btnPlayPause;
     private boolean isPlaying = false;
+    
+
     
     private int volumeLevel = 80; // Default volume level (0-100)
     private boolean vibrationEnabled = true;
@@ -116,6 +120,9 @@ public class Round2Activity extends AppCompatActivity {
         
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_round2);
+        
+        // Initialize audio player
+        initializeMediaPlayer();
         
         // Get betting information from intent
         if (getIntent().hasExtra("selectedAnimals")) {
@@ -381,7 +388,9 @@ public class Round2Activity extends AppCompatActivity {
     }
     
     private void applyVolumeSettings() {
-        // Apply volume settings (implementation would depend on how sound is managed)
+        // Update the media player volume based on current setting
+        updateMediaPlayerVolume();
+        Toast.makeText(this, "Âm lượng: " + volumeLevel + "%", Toast.LENGTH_SHORT).show();
     }
     
     private void applyVibrationSetting() {
@@ -397,6 +406,9 @@ public class Round2Activity extends AppCompatActivity {
         if (!raceFinished) {
             // Reset race state
             resetRace();
+            
+            // Change music to round music
+            changeBackgroundMusic(AudioManager.ROUND_MUSIC, true);
             
             // Start timer
             startTime = System.currentTimeMillis();
@@ -531,6 +543,9 @@ public class Round2Activity extends AppCompatActivity {
         
                 // Check if player won
         final boolean playerWon = checkPlayerWon();
+        
+        // Change to ending music
+        changeBackgroundMusic(AudioManager.ENDING_MUSIC, false);
         
         // Update points and show result dialog
         // Add a delay to show the result dialog after the race finishes
@@ -828,6 +843,9 @@ public class Round2Activity extends AppCompatActivity {
     }
     
     private void returnToBettingScreen() {
+        // Change back to background music before leaving
+        changeBackgroundMusic(AudioManager.BACKGROUND_MUSIC, true);
+        
         // Start BettingActivity
         Intent intent = new Intent(Round2Activity.this, BettingActivity.class);
         intent.putExtra("currentPoints", currentPoints);
@@ -873,4 +891,55 @@ public class Round2Activity extends AppCompatActivity {
         
         builder.show();
     }
+    
+    /**
+     * Initializes the MediaPlayer to play background music
+     * Note: We don't force audio restart to preserve continuity between screens
+     */
+    private void initializeMediaPlayer() {
+        // Just ensure the AudioManager exists, but don't restart music
+        // This maintains continuity from previous activities
+        
+        // Set volume level
+        AudioManager.getInstance().setVolume(volumeLevel);
+    }
+    
+    /**
+     * Changes the background music
+     * @param resId Resource ID of the audio file
+     * @param looping Whether the audio should loop
+     */
+    private void changeBackgroundMusic(int resId, boolean looping) {
+        // Use the AudioManager singleton to change music
+        // Pass false as the last parameter to avoid forcing restart when same music is playing
+        AudioManager.getInstance().playMusic(this, resId, looping, false);
+    }
+    
+    /**
+     * Updates the media player volume based on the volume level setting
+     */
+    private void updateMediaPlayerVolume() {
+        // Update volume using the AudioManager singleton
+        AudioManager.getInstance().setVolume(volumeLevel);
+    }
+    
+    /**
+     * Pauses the background music when activity is paused
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        AudioManager.getInstance().pauseMusic();
+    }
+    
+    /**
+     * Resumes the background music when activity is resumed
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AudioManager.getInstance().resumeMusic();
+    }
+    
+    // No need for onDestroy handling as the AudioManager is now shared
 }

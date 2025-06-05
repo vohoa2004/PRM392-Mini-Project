@@ -2,6 +2,7 @@ package com.group6.miniproject;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -44,6 +45,9 @@ public class BettingActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_betting);
         
+        // Initialize audio player
+        initializeMediaPlayer();
+        
         // Initialize views
         etBetAmount = findViewById(R.id.etBetAmount);
         tvCurrentPoints = findViewById(R.id.tvCurrentPoints);
@@ -68,16 +72,7 @@ public class BettingActivity extends AppCompatActivity {
         });
     }
     
-    @Override
-    protected void onResume() {
-        super.onResume();
-        
-        // Check for updated points in intent (may happen when returning from rounds)
-        if (getIntent().hasExtra("currentPoints")) {
-            currentPoints = getIntent().getIntExtra("currentPoints", currentPoints);
-            updatePointsDisplay();
-        }
-    }
+
     
     /**
      * Updates the points display with the current value
@@ -279,4 +274,42 @@ public class BettingActivity extends AppCompatActivity {
             }
         }
     }
+    
+    /**
+     * Initializes the background music
+     * Note: This method is kept for consistency but doesn't restart music
+     * to maintain continuity between screens
+     */
+    private void initializeMediaPlayer() {
+        // Just ensure the AudioManager exists, but don't restart music
+        // This preserves continuity from SignIn/SignUp/Instruction activities
+    }
+    
+    /**
+     * Pauses the background music when activity is paused
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        AudioManager.getInstance().pauseMusic();
+    }
+    
+    /**
+     * Resumes the background music and updates points when activity is resumed
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        // Check for updated points in intent (may happen when returning from rounds)
+        if (getIntent().hasExtra("currentPoints")) {
+            currentPoints = getIntent().getIntExtra("currentPoints", currentPoints);
+            updatePointsDisplay();
+        }
+        
+        // Ensure we're playing the background music when returning to betting screen
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+    }
+    
+    // No need for onDestroy handling as the AudioManager is now shared
 } 

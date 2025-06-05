@@ -2,6 +2,7 @@ package com.group6.miniproject;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
@@ -34,6 +35,9 @@ public class SigninActivity extends AppCompatActivity {
         
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_signin);
+        
+        // Initialize audio player
+        initializeMediaPlayer();
 
         // Initialize views
         etUsername = findViewById(R.id.etUsername);
@@ -71,4 +75,32 @@ public class SigninActivity extends AppCompatActivity {
     public static ArrayList<User> getAccounts() {
         return accounts;
     }
+    
+    /**
+     * Initializes the background music
+     */
+    private void initializeMediaPlayer() {
+        // Use the AudioManager singleton to play background music
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+    }
+    
+    /**
+     * Pauses the background music when activity is paused
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        AudioManager.getInstance().pauseMusic();
+    }
+    
+    /**
+     * Resumes the background music when activity is resumed
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AudioManager.getInstance().resumeMusic();
+    }
+    
+    // No need for onDestroy handling anymore as the AudioManager is now shared
 }
