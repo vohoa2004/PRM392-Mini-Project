@@ -16,6 +16,9 @@
             android:name=".MainActivity"
             android:exported="false" />
         <activity
+            android:name=".Round2Activity"
+            android:exported="false" />
+        <activity
             android:name=".BettingActivity"
             android:exported="false" />
         <activity

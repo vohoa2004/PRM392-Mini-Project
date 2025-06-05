@@ -798,28 +798,243 @@ public class MainActivity extends AppCompatActivity {
         final AlertDialog dialog = builder.create();
         dialog.setCancelable(false); // Prevent dismissing by tapping outside
         
+        // Check if player won to determine if they can proceed to round 2
+        final boolean playerWon = pointsChange > 0;
+        
+        if (playerWon) {
+            // If player won, show a new dialog with two options
+            dialog.dismiss();
+            showWinOptionsDialog(pointsChange);
+        } else {
+            // Set button click listeners for loss scenario
+            btnContinue.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    
+                    // Check if player is out of points
+                    if (currentPoints <= 0) {
+                        showGameOverDialog();
+                    }
+                }
+            });
+            
+            btnBetAgain.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    returnToBettingScreen();
+                }
+            });
+            
+            dialog.show();
+        }
+    }
+    
+    /**
+     * Shows dialog with options after winning Round 1
+     * @param pointsWon Points won in Round 1
+     */
+    private void showWinOptionsDialog(int pointsWon) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Chúc mừng chiến thắng!");
+        
+        // Create custom layout for the dialog
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_win_options, null);
+        if (dialogView == null) {
+            // Fallback if custom layout doesn't exist
+            builder.setTitle("Thắng: +" + pointsWon + " điểm");
+            builder.setMessage("Số điểm hiện tại: " + currentPoints + "\n\nBạn muốn làm gì tiếp theo?");
+            
+            // Option 1: Bet 5x for Round 2
+            builder.setPositiveButton("Cược x5", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    startRound2WithBet5x();
+                }
+            });
+            
+            // Option 2: Stop and return to betting screen
+            builder.setNegativeButton("Dừng lại", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    returnToBettingScreen();
+                }
+            });
+            
+            // Message about Round 2
+            builder.setMessage("Số điểm hiện tại: " + currentPoints + "\n\nBạn muốn làm gì tiếp theo?\n\nVòng 2");
+            
+            builder.setCancelable(true); // Allow canceling by tapping outside
+            builder.show();
+            return;
+        }
+        
+        builder.setView(dialogView);
+        
+        // Get references to the views in the dialog
+        TextView tvCurrentPoints = dialogView.findViewById(R.id.tv_current_points);
+        TextView tvWinAmount = dialogView.findViewById(R.id.tv_win_amount);
+        TextView tvRound2 = dialogView.findViewById(R.id.tv_round2);
+        Button btnBet5x = dialogView.findViewById(R.id.btn_bet_5x);
+        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
+        
+        // Set text values
+        tvCurrentPoints.setText("Số điểm hiện tại: " + currentPoints);
+        tvWinAmount.setText("Thắng: +" + pointsWon + " điểm");
+        btnBet5x.setText("Cược x5");
+        
+        // Create and show the dialog
+        final AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+        
         // Set button click listeners
-        btnContinue.setOnClickListener(new View.OnClickListener() {
+        tvRound2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
-                
-                // Check if player is out of points
-                if (currentPoints <= 0) {
-                    showGameOverDialog();
-                }
+                startRound2();
             }
         });
         
-        btnBetAgain.setOnClickListener(new View.OnClickListener() {
+        btnBet5x.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
-                returnToBettingScreen();
+                startRound2WithBet5x();
+            }
+        });
+        
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                returnToBettingScreen(); // "Dừng lại" now returns to betting screen
             }
         });
         
         dialog.show();
+    }
+    
+    /**
+     * Start Round 2 activity
+     */
+    private void startRound2() {
+        Intent intent = new Intent(MainActivity.this, Round2Activity.class);
+        intent.putExtra("selectedAnimals", selectedAnimals);
+        intent.putExtra("betAmount", betAmount);
+        intent.putExtra("currentPoints", currentPoints);
+        
+        // CRITICAL FIX: Find which animal(s) the player bet on
+        // This is the most important part - we need to know exactly which animal was bet on
+        
+        // Print debug info about all animals
+        System.out.println("DEBUG: All animals in Round 1:");
+        for (int i = 0; i < animalNames.length; i++) {
+            boolean isSelected = selectedAnimals != null && i < selectedAnimals.length && selectedAnimals[i];
+            System.out.println("Animal " + i + ": " + animalNames[i] + " - Selected: " + isSelected);
+        }
+        
+        // Print debug info about race animals
+        System.out.println("DEBUG: Race animals in Round 1:");
+        for (int i = 0; i < raceAnimalIndices.length; i++) {
+            int animalIndex = raceAnimalIndices[i];
+            System.out.println("Race position " + i + ": " + animalNames[animalIndex] + " (index: " + animalIndex + ")");
+        }
+        
+        // Find the selected animals by checking the selectedAnimals boolean array
+        List<Integer> betAnimalIndices = new ArrayList<>();
+        if (selectedAnimals != null) {
+            for (int i = 0; i < selectedAnimals.length; i++) {
+                if (selectedAnimals[i]) {
+                    betAnimalIndices.add(i);
+                    System.out.println("Found bet animal: " + animalNames[i] + " (index: " + i + ")");
+                }
+            }
+        }
+        
+        // Pass the bet animal indices to Round 2
+        if (!betAnimalIndices.isEmpty()) {
+            int primaryBetAnimal = betAnimalIndices.get(0);
+            intent.putExtra("betAnimalIndex", primaryBetAnimal);
+            System.out.println("PRIMARY BET ANIMAL FOR ROUND 2: " + animalNames[primaryBetAnimal] + " (index: " + primaryBetAnimal + ")");
+            
+            // Also pass all bet animal indices as an array
+            int[] betAnimalArray = new int[betAnimalIndices.size()];
+            for (int i = 0; i < betAnimalIndices.size(); i++) {
+                betAnimalArray[i] = betAnimalIndices.get(i);
+            }
+            intent.putExtra("betAnimalIndices", betAnimalArray);
+        } else {
+            System.out.println("ERROR: No bet animals found for Round 2!");
+        }
+        
+        // Also pass the race animal indices from Round 1 for reference
+        intent.putExtra("raceAnimalIndices", raceAnimalIndices);
+        
+        startActivity(intent);
+        finish(); // Close current activity
+    }
+    
+    /**
+     * Start Round 2 activity with 5x bet multiplier
+     */
+    private void startRound2WithBet5x() {
+        Intent intent = new Intent(MainActivity.this, Round2Activity.class);
+        intent.putExtra("selectedAnimals", selectedAnimals);
+        intent.putExtra("betAmount", betAmount);
+        intent.putExtra("currentPoints", currentPoints);
+        intent.putExtra("bet5x", true); // Flag to indicate 5x bet multiplier
+        
+        // CRITICAL FIX: Find which animal(s) the player bet on
+        // This is the most important part - we need to know exactly which animal was bet on
+        
+        // Print debug info about all animals
+        System.out.println("DEBUG: All animals in Round 1 (5x):");
+        for (int i = 0; i < animalNames.length; i++) {
+            boolean isSelected = selectedAnimals != null && i < selectedAnimals.length && selectedAnimals[i];
+            System.out.println("Animal " + i + ": " + animalNames[i] + " - Selected: " + isSelected);
+        }
+        
+        // Print debug info about race animals
+        System.out.println("DEBUG: Race animals in Round 1 (5x):");
+        for (int i = 0; i < raceAnimalIndices.length; i++) {
+            int animalIndex = raceAnimalIndices[i];
+            System.out.println("Race position " + i + ": " + animalNames[animalIndex] + " (index: " + animalIndex + ")");
+        }
+        
+        // Find the selected animals by checking the selectedAnimals boolean array
+        List<Integer> betAnimalIndices = new ArrayList<>();
+        if (selectedAnimals != null) {
+            for (int i = 0; i < selectedAnimals.length; i++) {
+                if (selectedAnimals[i]) {
+                    betAnimalIndices.add(i);
+                    System.out.println("Found bet animal (5x): " + animalNames[i] + " (index: " + i + ")");
+                }
+            }
+        }
+        
+        // Pass the bet animal indices to Round 2
+        if (!betAnimalIndices.isEmpty()) {
+            int primaryBetAnimal = betAnimalIndices.get(0);
+            intent.putExtra("betAnimalIndex", primaryBetAnimal);
+            System.out.println("PRIMARY BET ANIMAL FOR ROUND 2 (5x): " + animalNames[primaryBetAnimal] + " (index: " + primaryBetAnimal + ")");
+            
+            // Also pass all bet animal indices as an array
+            int[] betAnimalArray = new int[betAnimalIndices.size()];
+            for (int i = 0; i < betAnimalIndices.size(); i++) {
+                betAnimalArray[i] = betAnimalIndices.get(i);
+            }
+            intent.putExtra("betAnimalIndices", betAnimalArray);
+        } else {
+            System.out.println("ERROR: No bet animals found for Round 2 (5x)!");
+        }
+        
+        // Also pass the race animal indices from Round 1 for reference
+        intent.putExtra("raceAnimalIndices", raceAnimalIndices);
+        
+        startActivity(intent);
+        finish(); // Close current activity
     }
     
     /**
