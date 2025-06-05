@@ -368,6 +368,9 @@ public class MainActivity extends AppCompatActivity {
             // If race is already finished, reset everything for a new race
             resetRace();
         }
+
+        // Pre-check the checkboxes based on selected animals from betting
+        setAndDisableCheckboxes();
         
         // Start the timer
         startTime = System.currentTimeMillis();
@@ -375,6 +378,48 @@ public class MainActivity extends AppCompatActivity {
         
         // Animate the seekbars to simulate race
         animateRace();
+    }
+    
+    /**
+     * Sets the checkboxes based on the animals selected during betting and disables them
+     * to prevent changes during the race.
+     */
+    private void setAndDisableCheckboxes() {
+        // Ensure there are 3 racing animals
+        if (raceAnimalIndices != null && raceAnimalIndices.length >= 3) {
+            // For each racing animal position (0, 1, 2), check if it's in the user's bet list
+            // First, get the animal index for each position
+            int animal1 = raceAnimalIndices[0];
+            int animal2 = raceAnimalIndices[1];
+            int animal3 = raceAnimalIndices[2];
+            
+            // Check if each animal was selected by the user in the betting screen
+            boolean isAnimal1Selected = false;
+            boolean isAnimal2Selected = false;
+            boolean isAnimal3Selected = false;
+            
+            if (selectedAnimals != null && animal1 < selectedAnimals.length) {
+                isAnimal1Selected = selectedAnimals[animal1];
+            }
+            
+            if (selectedAnimals != null && animal2 < selectedAnimals.length) {
+                isAnimal2Selected = selectedAnimals[animal2];
+            }
+            
+            if (selectedAnimals != null && animal3 < selectedAnimals.length) {
+                isAnimal3Selected = selectedAnimals[animal3];
+            }
+            
+            // Set the checkbox states based on user's selections
+            checkBox1.setChecked(isAnimal1Selected);
+            checkBox2.setChecked(isAnimal2Selected);
+            checkBox3.setChecked(isAnimal3Selected);
+            
+            // Disable all checkboxes during the race
+            checkBox1.setEnabled(false);
+            checkBox2.setEnabled(false);
+            checkBox3.setEnabled(false);
+        }
     }
     
     private void pauseRace() {
@@ -416,6 +461,11 @@ public class MainActivity extends AppCompatActivity {
         if (animator3 != null) {
             animator3.cancel();
         }
+        
+        // Reset checkbox states to enabled for a new race
+        checkBox1.setEnabled(true);
+        checkBox2.setEnabled(true);
+        checkBox3.setEnabled(true);
     }
     
     private void animateRace() {
@@ -523,76 +573,35 @@ public class MainActivity extends AppCompatActivity {
     }
     
     private void setupRaceAnimals() {
-        // Create a list of all possible animal indices (0-8)
-        List<Integer> allAnimalIndices = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
-            allAnimalIndices.add(i);
-        }
-        
-        // Remove selected animals from the pool to avoid duplicates
-        allAnimalIndices.removeAll(selectedAnimalIndices);
-        
-        // Create a list to hold the final 3 animals for the race
-        List<Integer> raceAnimalIndicesList = new ArrayList<>();
-        
-        // First, add selected animal (if any)
-        if (!selectedAnimalIndices.isEmpty()) {
-            // If multiple animals were selected, choose one randomly
-            int randomSelectedIndex = random.nextInt(selectedAnimalIndices.size());
-            int selectedAnimalIndex = selectedAnimalIndices.get(randomSelectedIndex);
-            raceAnimalIndicesList.add(selectedAnimalIndex);
-        }
-        
-        // Fill the remaining slots with random animals
-        while (raceAnimalIndicesList.size() < 3 && !allAnimalIndices.isEmpty()) {
-            int randomIndex = random.nextInt(allAnimalIndices.size());
-            raceAnimalIndicesList.add(allAnimalIndices.get(randomIndex));
-            allAnimalIndices.remove(randomIndex);
-        }
-        
-        // Ensure we have exactly 3 animals
-        while (raceAnimalIndicesList.size() < 3) {
-            // In case we don't have enough animals, just add random indices
-            raceAnimalIndicesList.add(random.nextInt(9));
-        }
-        
-        // Set all checkboxes to unchecked and disabled by default
-        checkBox1.setChecked(false);
-        checkBox2.setChecked(false);
-        checkBox3.setChecked(false);
-        checkBox1.setEnabled(false);
-        checkBox2.setEnabled(false);
-        checkBox3.setEnabled(false);
-        
-        // Set the thumbs for the three seekbars based on selected animals
-        setSeekBarThumb(seekBar1, raceAnimalIndicesList.get(0));
-        setSeekBarThumb(seekBar2, raceAnimalIndicesList.get(1));
-        setSeekBarThumb(seekBar3, raceAnimalIndicesList.get(2));
-        
-        // If we have a selected animal, check its checkbox and enable it
-        if (!selectedAnimalIndices.isEmpty()) {
-            int selectedAnimalIndex = raceAnimalIndicesList.get(0);
-            
-            // Check which seekbar has the selected animal
-            if (selectedAnimalIndices.contains(selectedAnimalIndex)) {
-                checkBox1.setChecked(true);
-                checkBox1.setEnabled(true);
-                setupCheckboxAndSeekbar(checkBox1, seekBar1);
-            } else if (selectedAnimalIndices.contains(raceAnimalIndicesList.get(1))) {
-                checkBox2.setChecked(true);
-                checkBox2.setEnabled(true);
-                setupCheckboxAndSeekbar(checkBox2, seekBar2);
-            } else if (selectedAnimalIndices.contains(raceAnimalIndicesList.get(2))) {
-                checkBox3.setChecked(true);
-                checkBox3.setEnabled(true);
-                setupCheckboxAndSeekbar(checkBox3, seekBar3);
+        // Lấy danh sách index các nhân vật đã chọn
+        List<Integer> betAnimalIndices = new ArrayList<>();
+        if (selectedAnimals != null) {
+            for (int i = 0; i < selectedAnimals.length; i++) {
+                if (selectedAnimals[i]) {
+                    betAnimalIndices.add(i);
+                }
             }
         }
-        
-        // Store the race animal indices
-        for (int i = 0; i < 3; i++) {
-            raceAnimalIndices[i] = raceAnimalIndicesList.get(i);
+        List<Integer> allIndices = new ArrayList<>();
+        for (int i = 0; i < animalDrawables.length; i++) allIndices.add(i);
+        // Loại bỏ các nhân vật đã chọn khỏi pool random
+        for (int idx : betAnimalIndices) allIndices.remove((Integer) idx);
+        // Tạo danh sách 3 nhân vật cho đua
+        List<Integer> raceAnimalIndicesList = new ArrayList<>(betAnimalIndices);
+        java.util.Collections.shuffle(allIndices, random);
+        while (raceAnimalIndicesList.size() < 3 && !allIndices.isEmpty()) {
+            raceAnimalIndicesList.add(allIndices.remove(0));
         }
+        // Nếu vẫn chưa đủ thì random tiếp (trường hợp cực đoan)
+        while (raceAnimalIndicesList.size() < 3) {
+            raceAnimalIndicesList.add(random.nextInt(animalDrawables.length));
+        }
+        // Gán vào raceAnimalIndices
+        for (int i = 0; i < 3; i++) raceAnimalIndices[i] = raceAnimalIndicesList.get(i);
+        // Set thumb cho seekbar
+        setSeekBarThumb(seekBar1, raceAnimalIndices[0]);
+        setSeekBarThumb(seekBar2, raceAnimalIndices[1]);
+        setSeekBarThumb(seekBar3, raceAnimalIndices[2]);
     }
     
     private void setSeekBarThumb(SeekBar seekBar, int animalIndex) {
@@ -689,13 +698,25 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         
+        // Count the number of characters the user bet on
+        int totalBets = 0;
+        for (int i = 0; i < selectedAnimals.length; i++) {
+            if (selectedAnimals[i]) {
+                totalBets++;
+            }
+        }
+        
+        // Calculate total amount bet (betAmount per character)
+        int totalBetAmount = betAmount * totalBets;
+        
         // Update points based on win/loss
         if (playerWon) {
-            pointsChange = betAmount * multiplier;
+            // User loses points for all bets but gains points for the winning character
+            pointsChange = (betAmount * multiplier) - totalBetAmount;
             currentPoints += pointsChange;
             resultMessage = "Chúc mừng! Bạn đã thắng";
         } else {
-            pointsChange = -betAmount;
+            pointsChange = -totalBetAmount;
             currentPoints += pointsChange;
             resultMessage = "Tiếc quá! Bạn đã thua";
         }
@@ -924,56 +945,28 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("selectedAnimals", selectedAnimals);
         intent.putExtra("betAmount", betAmount);
         intent.putExtra("currentPoints", currentPoints);
-        
-        // CRITICAL FIX: Find which animal(s) the player bet on
-        // This is the most important part - we need to know exactly which animal was bet on
-        
-        // Print debug info about all animals
-        System.out.println("DEBUG: All animals in Round 1:");
-        for (int i = 0; i < animalNames.length; i++) {
-            boolean isSelected = selectedAnimals != null && i < selectedAnimals.length && selectedAnimals[i];
-            System.out.println("Animal " + i + ": " + animalNames[i] + " - Selected: " + isSelected);
-        }
-        
-        // Print debug info about race animals
-        System.out.println("DEBUG: Race animals in Round 1:");
-        for (int i = 0; i < raceAnimalIndices.length; i++) {
-            int animalIndex = raceAnimalIndices[i];
-            System.out.println("Race position " + i + ": " + animalNames[animalIndex] + " (index: " + animalIndex + ")");
-        }
-        
-        // Find the selected animals by checking the selectedAnimals boolean array
+
+        // Lấy danh sách các nhân vật đã chọn
         List<Integer> betAnimalIndices = new ArrayList<>();
         if (selectedAnimals != null) {
             for (int i = 0; i < selectedAnimals.length; i++) {
                 if (selectedAnimals[i]) {
                     betAnimalIndices.add(i);
-                    System.out.println("Found bet animal: " + animalNames[i] + " (index: " + i + ")");
                 }
             }
         }
-        
-        // Pass the bet animal indices to Round 2
+        // Truyền toàn bộ danh sách sang Round2Activity
         if (!betAnimalIndices.isEmpty()) {
-            int primaryBetAnimal = betAnimalIndices.get(0);
-            intent.putExtra("betAnimalIndex", primaryBetAnimal);
-            System.out.println("PRIMARY BET ANIMAL FOR ROUND 2: " + animalNames[primaryBetAnimal] + " (index: " + primaryBetAnimal + ")");
-            
-            // Also pass all bet animal indices as an array
             int[] betAnimalArray = new int[betAnimalIndices.size()];
             for (int i = 0; i < betAnimalIndices.size(); i++) {
                 betAnimalArray[i] = betAnimalIndices.get(i);
             }
             intent.putExtra("betAnimalIndices", betAnimalArray);
-        } else {
-            System.out.println("ERROR: No bet animals found for Round 2!");
         }
-        
-        // Also pass the race animal indices from Round 1 for reference
+        // Truyền luôn raceAnimalIndices nếu cần
         intent.putExtra("raceAnimalIndices", raceAnimalIndices);
-        
         startActivity(intent);
-        finish(); // Close current activity
+        finish();
     }
     
     /**

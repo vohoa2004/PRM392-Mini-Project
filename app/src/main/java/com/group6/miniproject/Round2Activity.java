@@ -568,93 +568,30 @@ public class Round2Activity extends AppCompatActivity {
     }
     
     private void setupRaceAnimals() {
-        System.out.println("========== ROUND 2 SETUP ==========");
-        
-        // STEP 1: Get the bet animal index directly from the intent
-        int betAnimalIndex = getIntent().getIntExtra("betAnimalIndex", -1);
-        
-        // Print all intent extras for debugging
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            System.out.println("Intent extras:");
-            for (String key : extras.keySet()) {
-                System.out.println("Key: " + key + " = " + extras.get(key));
+        // Nhận danh sách các nhân vật đã chọn từ intent
+        int[] betAnimalIndices = getIntent().getIntArrayExtra("betAnimalIndices");
+        List<Integer> finalRaceIndices = new ArrayList<>();
+        List<Integer> allIndices = new ArrayList<>();
+        for (int i = 0; i < animalDrawables.length; i++) allIndices.add(i);
+        if (betAnimalIndices != null && betAnimalIndices.length > 0) {
+            // Thêm các nhân vật đã chọn
+            for (int idx : betAnimalIndices) {
+                finalRaceIndices.add(idx);
+                allIndices.remove((Integer) idx);
             }
-        }
-        
-        // STEP 2: Check if we have a valid bet animal index
-        if (betAnimalIndex >= 0 && betAnimalIndex < animalDrawables.length) {
-            System.out.println("FOUND BET ANIMAL: " + animalNames[betAnimalIndex] + " (index: " + betAnimalIndex + ")");
-            
-            // STEP 3: Put the bet animal in the first position
-            raceAnimalIndices[0] = betAnimalIndex;
-            
-            // STEP 4: Create a list of available indices for the other positions (excluding the bet animal)
-            List<Integer> availableIndices = new ArrayList<>();
-            for (int i = 0; i < animalDrawables.length; i++) {
-                if (i != betAnimalIndex) { // Don't include the bet animal
-                    availableIndices.add(i);
-                }
+            // Nếu chưa đủ 3, random bổ sung
+            java.util.Collections.shuffle(allIndices, random);
+            while (finalRaceIndices.size() < 3 && !allIndices.isEmpty()) {
+                finalRaceIndices.add(allIndices.remove(0));
             }
-            
-            // STEP 5: Shuffle the available indices
-            Collections.shuffle(availableIndices, random);
-            
-            // STEP 6: Fill the remaining positions with random animals
-            raceAnimalIndices[1] = availableIndices.get(0);
-            raceAnimalIndices[2] = availableIndices.get(1);
         } else {
-            // FALLBACK: If no bet animal index is available, try to get it from selectedAnimals
-            System.out.println("No valid bet animal index found in intent. Checking selectedAnimals...");
-            
-            boolean[] selectedAnimalsArray = getIntent().getBooleanArrayExtra("selectedAnimals");
-            if (selectedAnimalsArray != null) {
-                // Print the selectedAnimals array
-                System.out.println("selectedAnimals array:");
-                for (int i = 0; i < selectedAnimalsArray.length; i++) {
-                    System.out.println("Animal " + i + " (" + animalNames[i] + "): " + selectedAnimalsArray[i]);
-                }
-                
-                // Find the first selected animal
-                for (int i = 0; i < selectedAnimalsArray.length; i++) {
-                    if (selectedAnimalsArray[i]) {
-                        System.out.println("Found selected animal in array: " + animalNames[i] + " (index: " + i + ")");
-                        
-                        // Put this animal in the first position
-                        raceAnimalIndices[0] = i;
-                        
-                        // Create a list of available indices for the other positions
-                        List<Integer> availableIndices = new ArrayList<>();
-                        for (int j = 0; j < animalDrawables.length; j++) {
-                            if (j != i) { // Don't include the selected animal
-                                availableIndices.add(j);
-                            }
-                        }
-                        
-                        // Shuffle the available indices
-                        Collections.shuffle(availableIndices, random);
-                        
-                        // Fill the remaining positions with random animals
-                        raceAnimalIndices[1] = availableIndices.get(0);
-                        raceAnimalIndices[2] = availableIndices.get(1);
-                        
-                        break; // We found a selected animal, so we can stop looking
-                    }
-                }
-            } else {
-                // If all else fails, fall back to random selection
-                System.out.println("WARNING: No bet animal information found. Using random animals.");
-                selectRandomAnimals();
-            }
+            // Nếu không có dữ liệu, random 3 nhân vật
+            java.util.Collections.shuffle(allIndices, random);
+            for (int i = 0; i < 3; i++) finalRaceIndices.add(allIndices.get(i));
         }
-        
-        // Log the final animals for Round 2
-        System.out.println("FINAL ROUND 2 ANIMALS: " + 
-                          animalNames[raceAnimalIndices[0]] + " (index: " + raceAnimalIndices[0] + "), " +
-                          animalNames[raceAnimalIndices[1]] + " (index: " + raceAnimalIndices[1] + "), " +
-                          animalNames[raceAnimalIndices[2]] + " (index: " + raceAnimalIndices[2] + ")");
-        
-        // Set the thumbs for the seekbars
+        // Gán vào raceAnimalIndices
+        for (int i = 0; i < 3; i++) raceAnimalIndices[i] = finalRaceIndices.get(i);
+        // Set thumb cho seekbar
         setSeekBarThumb(seekBar1, raceAnimalIndices[0]);
         setSeekBarThumb(seekBar2, raceAnimalIndices[1]);
         setSeekBarThumb(seekBar3, raceAnimalIndices[2]);

@@ -30,7 +30,9 @@ public class BettingActivity extends AppCompatActivity {
     private Map<Integer, Boolean> selectedAnimals = new HashMap<>();
     private Map<Integer, Integer> animalResources = new HashMap<>();
     private Map<Integer, String> animalNames = new HashMap<>();
+    private Map<Integer, View> animalViews = new HashMap<>();
     
+    private static final int MAX_SELECTIONS = 3; // Maximum number of animals that can be selected
     private int currentPoints = 1000; // Default starting points only used if no points are passed
 
     @Override
@@ -133,6 +135,7 @@ public class BettingActivity extends AppCompatActivity {
             
             // Create container view for the animal
             View animalView = getLayoutInflater().inflate(R.layout.item_animal, gridAnimals, false);
+            animalViews.put(animalId, animalView);
             
             // Get views from the inflated layout
             ImageView ivAnimal = animalView.findViewById(R.id.ivAnimal);
@@ -147,8 +150,19 @@ public class BettingActivity extends AppCompatActivity {
             
             // Set click listener for the entire view
             animalView.setOnClickListener(v -> {
+                // Get current state
+                boolean currentlySelected = selectedAnimals.get(animalId);
+                
+                // If trying to select and already at maximum, show message and return
+                if (!currentlySelected && countSelectedAnimals() >= MAX_SELECTIONS) {
+                    Toast.makeText(BettingActivity.this, 
+                            "Chỉ được chọn tối đa " + MAX_SELECTIONS + " nhân vật", 
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
                 // Toggle selection
-                boolean isSelected = !selectedAnimals.get(animalId);
+                boolean isSelected = !currentlySelected;
                 selectedAnimals.put(animalId, isSelected);
                 
                 // Update visual appearance
@@ -157,6 +171,9 @@ public class BettingActivity extends AppCompatActivity {
                 // Add or remove border based on selection
                 ivAnimal.setBackground(isSelected ? 
                         ContextCompat.getDrawable(BettingActivity.this, R.drawable.selected_animal_background) : null);
+                
+                // Update the enabled state of all animal views based on selection count
+                updateAnimalViewsState();
             });
             
             // Set parameters for grid layout
@@ -224,5 +241,42 @@ public class BettingActivity extends AppCompatActivity {
         startActivity(intent);
         
         
+    }
+    
+    /**
+     * Counts the number of currently selected animals
+     * @return Number of selected animals
+     */
+    private int countSelectedAnimals() {
+        int count = 0;
+        for (Boolean isSelected : selectedAnimals.values()) {
+            if (isSelected) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Updates the enabled state of all animal views based on selection count
+     */
+    private void updateAnimalViewsState() {
+        int selectedCount = countSelectedAnimals();
+        
+        // If at max selections, disable all unselected animals
+        for (int i = 0; i < animalResources.size(); i++) {
+            View animalView = animalViews.get(i);
+            ImageView ivAnimal = animalView.findViewById(R.id.ivAnimal);
+            boolean isSelected = selectedAnimals.get(i);
+            
+            // Only disable unselected items when at max selections
+            if (selectedCount >= MAX_SELECTIONS && !isSelected) {
+                animalView.setEnabled(false);
+                ivAnimal.setAlpha(0.3f); // More faded to show disabled state
+            } else {
+                animalView.setEnabled(true);
+                ivAnimal.setAlpha(isSelected ? 1.0f : 0.5f); // Normal alpha for selected/unselected
+            }
+        }
     }
 } 
