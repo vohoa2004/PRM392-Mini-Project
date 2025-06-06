@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -45,9 +46,6 @@ public class BettingActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_betting);
         
-        // Initialize audio player
-        initializeMediaPlayer();
-        
         // Initialize views
         etBetAmount = findViewById(R.id.etBetAmount);
         tvCurrentPoints = findViewById(R.id.tvCurrentPoints);
@@ -58,6 +56,13 @@ public class BettingActivity extends AppCompatActivity {
         // Get current points from intent if available
         if (getIntent().hasExtra("currentPoints")) {
             currentPoints = getIntent().getIntExtra("currentPoints", currentPoints);
+        }
+        
+        // Initialize audio player AFTER getting intent extras
+        boolean fromGame = getIntent().getBooleanExtra("from_game", false);
+        // If coming from game, audio will be initialized in onResume
+        if (!fromGame) {
+            initializeMediaPlayer();
         }
         
         // Set current points
@@ -153,6 +158,8 @@ public class BettingActivity extends AppCompatActivity {
                     Toast.makeText(BettingActivity.this, 
                             "Chỉ được chọn tối đa " + MAX_SELECTIONS + " nhân vật", 
                             Toast.LENGTH_SHORT).show();
+                    // Đảm bảo âm thanh vẫn tiếp tục phát sau khi hiển thị thông báo
+                    AudioManager.getInstance().resumeMusic();
                     return;
                 }
                 
@@ -169,6 +176,11 @@ public class BettingActivity extends AppCompatActivity {
                 
                 // Update the enabled state of all animal views based on selection count
                 updateAnimalViewsState();
+                
+                // Extra check to ensure audio doesn't get stopped
+                new Handler().postDelayed(() -> {
+                    AudioManager.getInstance().resumeMusic();
+                }, 500);
             });
             
             // Set parameters for grid layout
@@ -277,12 +289,9 @@ public class BettingActivity extends AppCompatActivity {
     
     /**
      * Initializes the background music
-     * Note: This method is kept for consistency but doesn't restart music
-     * to maintain continuity between screens
      */
     private void initializeMediaPlayer() {
-        // Just ensure the AudioManager exists, but don't restart music
-        // This preserves continuity from SignIn/SignUp/Instruction activities
+        AudioManager.getInstance().playMusic(this, AudioManager.BETTING_MUSIC, true, true);
     }
     
     /**
@@ -291,7 +300,10 @@ public class BettingActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
     /**
@@ -307,9 +319,6 @@ public class BettingActivity extends AppCompatActivity {
             updatePointsDisplay();
         }
         
-        // Ensure we're playing the background music when returning to betting screen
-        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+        AudioManager.getInstance().resumeMusic();
     }
-    
-    // No need for onDestroy handling as the AudioManager is now shared
 } 

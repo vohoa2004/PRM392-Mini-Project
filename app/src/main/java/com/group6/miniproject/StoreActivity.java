@@ -315,9 +315,7 @@ public class StoreActivity extends AppCompatActivity {
      * Initializes the background music
      */
     private void initializeMediaPlayer() {
-        // Use the AudioManager singleton to play background music
-        // We don't force restart to ensure continuity from previous activity
-        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+        AudioManager.getInstance().playMusic(this, AudioManager.BETTING_MUSIC, true, true);
     }
     
     /**
@@ -326,7 +324,10 @@ public class StoreActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
     /**

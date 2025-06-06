@@ -185,9 +185,7 @@ public class Round2Activity extends AppCompatActivity {
         setupCheckboxes();
     }
     
-    /**
-     * Set up checkboxes for Round 2 - ensure they're checked for the selected animals
-     */
+    
     private void setupCheckboxes() {
         System.out.println("========== SETTING UP CHECKBOXES FOR ROUND 2 ==========");
         
@@ -407,8 +405,8 @@ public class Round2Activity extends AppCompatActivity {
             // Reset race state
             resetRace();
             
-            // Change music to round music
-            changeBackgroundMusic(AudioManager.ROUND_MUSIC, true);
+            // Always restart the round music with force flag to ensure it plays every time
+            AudioManager.getInstance().playMusic(this, AudioManager.ROUND_MUSIC, true, true);
             
             // Start timer
             startTime = System.currentTimeMillis();
@@ -541,11 +539,11 @@ public class Round2Activity extends AppCompatActivity {
         btnPlayPause.setImageResource(R.drawable.play);
         isPlaying = false;
         
-                // Check if player won
+        // Check if player won
         final boolean playerWon = checkPlayerWon();
         
-        // Change to ending music
-        changeBackgroundMusic(AudioManager.ENDING_MUSIC, false);
+        // Change to ending music - force restart to ensure sound plays every time
+        AudioManager.getInstance().playMusic(this, AudioManager.ENDING_MUSIC, false, true);
         
         // Update points and show result dialog
         // Add a delay to show the result dialog after the race finishes
@@ -843,20 +841,18 @@ public class Round2Activity extends AppCompatActivity {
     }
     
     private void returnToBettingScreen() {
-        // Change back to background music before leaving
-        changeBackgroundMusic(AudioManager.BACKGROUND_MUSIC, true);
+        // Change back to background music before leaving - force restart to ensure it plays
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
         
         // Start BettingActivity
         Intent intent = new Intent(Round2Activity.this, BettingActivity.class);
         intent.putExtra("currentPoints", currentPoints);
+        intent.putExtra("from_game", true); // Flag to indicate we're coming from a game
         startActivity(intent);
         finish(); // Close current activity
     }
     
-    /**
-     * Check if the player won the race
-     * @return true if player won, false otherwise
-     */
+
     private boolean checkPlayerWon() {
         boolean playerWon = false;
         for (int i = 0; i < selectedAnimalIndices.size(); i++) {
@@ -892,54 +888,47 @@ public class Round2Activity extends AppCompatActivity {
         builder.show();
     }
     
-    /**
-     * Initializes the MediaPlayer to play background music
-     * Note: We don't force audio restart to preserve continuity between screens
-     */
+
     private void initializeMediaPlayer() {
-        // Just ensure the AudioManager exists, but don't restart music
-        // This maintains continuity from previous activities
-        
-        // Set volume level
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
         AudioManager.getInstance().setVolume(volumeLevel);
     }
     
-    /**
-     * Changes the background music
-     * @param resId Resource ID of the audio file
-     * @param looping Whether the audio should loop
-     */
     private void changeBackgroundMusic(int resId, boolean looping) {
         // Use the AudioManager singleton to change music
-        // Pass false as the last parameter to avoid forcing restart when same music is playing
-        AudioManager.getInstance().playMusic(this, resId, looping, false);
+        AudioManager.getInstance().playMusic(this, resId, looping, true);
     }
     
-    /**
-     * Updates the media player volume based on the volume level setting
-     */
     private void updateMediaPlayerVolume() {
         // Update volume using the AudioManager singleton
         AudioManager.getInstance().setVolume(volumeLevel);
     }
     
-    /**
-     * Pauses the background music when activity is paused
-     */
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
-    /**
-     * Resumes the background music when activity is resumed
-     */
     @Override
     protected void onResume() {
         super.onResume();
-        AudioManager.getInstance().resumeMusic();
+        // Kiểm tra trạng thái game để phát nhạc tương ứng
+        if (raceFinished) {
+            // Nếu đã kết thúc đua, phát nhạc kết thúc
+            AudioManager.getInstance().playMusic(this, AudioManager.ENDING_MUSIC, false, true);
+        } else if (isPlaying) {
+            // Nếu đang đua, phát nhạc đua
+            AudioManager.getInstance().playMusic(this, AudioManager.ROUND_MUSIC, true, true);
+        } else {
+            // Trường hợp bình thường, tiếp tục nhạc đang có
+            if (!AudioManager.getInstance().isPlaying()) {
+                AudioManager.getInstance().resumeMusic();
+            }
+        }
     }
     
-    // No need for onDestroy handling as the AudioManager is now shared
 }

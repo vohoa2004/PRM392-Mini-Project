@@ -378,8 +378,8 @@ public class MainActivity extends AppCompatActivity {
         // Pre-check the checkboxes based on selected animals from betting
         setAndDisableCheckboxes();
         
-        // Change music to round music
-        changeBackgroundMusic(AudioManager.ROUND_MUSIC, true);
+        // Always restart the round music with force flag to ensure it plays every time
+        AudioManager.getInstance().playMusic(this, AudioManager.ROUND_MUSIC, true, true);
         
         // Start the timer
         startTime = System.currentTimeMillis();
@@ -556,8 +556,8 @@ public class MainActivity extends AppCompatActivity {
                 playerWon = true;
             }
             
-            // Change to ending music
-            changeBackgroundMusic(AudioManager.ENDING_MUSIC, false);
+            // Change to ending music - force restart to ensure sound plays every time
+            AudioManager.getInstance().playMusic(this, AudioManager.ENDING_MUSIC, false, true);
             
             // Show the results after a short delay
             final boolean finalPlayerWon = playerWon;
@@ -1078,12 +1078,13 @@ public class MainActivity extends AppCompatActivity {
      * Returns to the betting screen with current points
      */
     private void returnToBettingScreen() {
-        // Change back to background music before leaving
-        changeBackgroundMusic(AudioManager.BACKGROUND_MUSIC, true);
+        // Change back to background music before leaving - force restart to ensure it plays
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
         
         // Start BettingActivity
         Intent intent = new Intent(MainActivity.this, BettingActivity.class);
         intent.putExtra("currentPoints", currentPoints);
+        intent.putExtra("from_game", true); // Flag to indicate we're coming from a game
         startActivity(intent);
         finish(); // Close current activity
     }
@@ -1117,7 +1118,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void initializeMediaPlayer() {
         // Use the AudioManager singleton to play background music
-        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
         
         // Set initial volume
         AudioManager.getInstance().setVolume(volumeLevel);
@@ -1130,8 +1131,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void changeBackgroundMusic(int resId, boolean looping) {
         // Use the AudioManager singleton to change music
-        // Pass false as the last parameter to avoid forcing restart when same music is playing
-        AudioManager.getInstance().playMusic(this, resId, looping, false);
+        AudioManager.getInstance().playMusic(this, resId, looping, true);
     }
     
     /**
@@ -1148,7 +1148,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
     /**
@@ -1157,7 +1160,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        AudioManager.getInstance().resumeMusic();
+        // Kiểm tra trạng thái game để phát nhạc tương ứng
+        if (raceFinished) {
+            // Nếu đã kết thúc đua, phát nhạc kết thúc
+            AudioManager.getInstance().playMusic(this, AudioManager.ENDING_MUSIC, false, true);
+        } else if (isPlaying) {
+            // Nếu đang đua, phát nhạc đua
+            AudioManager.getInstance().playMusic(this, AudioManager.ROUND_MUSIC, true, true);
+        } else {
+            // Trường hợp bình thường, tiếp tục nhạc đang có
+            if (!AudioManager.getInstance().isPlaying()) {
+                AudioManager.getInstance().resumeMusic();
+            }
+        }
     }
     
     // No need for onDestroy handling as the AudioManager is now shared

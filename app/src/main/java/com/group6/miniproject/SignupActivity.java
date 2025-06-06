@@ -75,9 +75,9 @@ public class SignupActivity extends AppCompatActivity {
      * Initializes the background music
      */
     private void initializeMediaPlayer() {
-        // Use the AudioManager singleton to play background music
-        // We don't force restart to ensure continuity from previous activity
-        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+        if (!AudioManager.getInstance().isPlayingMusic(AudioManager.BACKGROUND_MUSIC)) {
+            AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
+        }
     }
     
     /**
@@ -86,7 +86,10 @@ public class SignupActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
     /**

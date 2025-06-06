@@ -2,14 +2,11 @@ package com.group6.miniproject;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-
 
 public class InstructionActivity extends AppCompatActivity {
 
@@ -29,10 +26,11 @@ public class InstructionActivity extends AppCompatActivity {
 
         btnStart = findViewById(R.id.btnStart);
 
-        //Set OnClickListener for the button
+        // Set OnClickListener for the button
         btnStart.setOnClickListener(v -> {
-            //Start the BettingActivity instead of MainActivity
-            startActivity(new Intent(InstructionActivity.this, BettingActivity.class));
+            // Start the BettingActivity instead of MainActivity
+            Intent intent = new Intent(InstructionActivity.this, BettingActivity.class);
+            startActivity(intent);
         });
     }
     
@@ -40,9 +38,9 @@ public class InstructionActivity extends AppCompatActivity {
      * Initializes the background music
      */
     private void initializeMediaPlayer() {
-        // Use the AudioManager singleton to play background music
-        // We don't force restart to ensure continuity from previous activity
-        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+        if (!AudioManager.getInstance().isPlayingMusic(AudioManager.BACKGROUND_MUSIC)) {
+            AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
+        }
     }
     
     /**
@@ -51,7 +49,10 @@ public class InstructionActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
     /**
@@ -62,6 +63,4 @@ public class InstructionActivity extends AppCompatActivity {
         super.onResume();
         AudioManager.getInstance().resumeMusic();
     }
-    
-    // No need for onDestroy handling as the AudioManager is now shared
 }

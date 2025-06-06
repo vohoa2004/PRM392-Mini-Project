@@ -63,8 +63,7 @@ public class SigninActivity extends AppCompatActivity {
         for (User account : accounts) {
             if (account.getUsername().equals(username) && account.getPassword().equals(password)) {
                 Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(SigninActivity.this, InstructionActivity.class));
-                finish();
+                moveToInstructionActivity();
                 return;
             }
         }
@@ -80,8 +79,9 @@ public class SigninActivity extends AppCompatActivity {
      * Initializes the background music
      */
     private void initializeMediaPlayer() {
-        // Use the AudioManager singleton to play background music
-        AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, false);
+        if (!AudioManager.getInstance().isPlayingMusic(AudioManager.BACKGROUND_MUSIC)) {
+            AudioManager.getInstance().playMusic(this, AudioManager.BACKGROUND_MUSIC, true, true);
+        }
     }
     
     /**
@@ -90,7 +90,10 @@ public class SigninActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        AudioManager.getInstance().pauseMusic();
+        // Chỉ tạm dừng nhạc khi ứng dụng thực sự bị đóng hoặc chuyển sang nền
+        if (isFinishing()) {
+            AudioManager.getInstance().pauseMusic();
+        }
     }
     
     /**
@@ -102,5 +105,11 @@ public class SigninActivity extends AppCompatActivity {
         AudioManager.getInstance().resumeMusic();
     }
     
-    // No need for onDestroy handling anymore as the AudioManager is now shared
+    /**
+     * Navigate to the Instruction activity
+     */
+    private void moveToInstructionActivity() {
+        Intent intent = new Intent(SigninActivity.this, InstructionActivity.class);
+        startActivity(intent);
+    }
 }
