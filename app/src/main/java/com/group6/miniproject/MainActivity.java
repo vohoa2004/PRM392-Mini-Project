@@ -368,25 +368,37 @@ public class MainActivity extends AppCompatActivity {
         }
         Toast.makeText(this, "Độ khó: " + difficultyText, Toast.LENGTH_SHORT).show();
     }
-    
+
     private void startRace() {
+        // Only reset if race is completely finished, not paused
         if (raceFinished) {
-            // If race is already finished, reset everything for a new race
             resetRace();
         }
 
         // Pre-check the checkboxes based on selected animals from betting
         setAndDisableCheckboxes();
-        
+
         // Always restart the round music with force flag to ensure it plays every time
         AudioManager.getInstance().playMusic(this, AudioManager.ROUND_MUSIC, true, true);
-        
-        // Start the timer
-        startTime = System.currentTimeMillis();
+
+        // Start or resume the timer
+        if (startTime == 0) {
+            // First time starting - set start time
+            startTime = System.currentTimeMillis();
+        }
+        // Resume timer updates
         timerHandler.postDelayed(timerRunnable, 0);
-        
-        // Animate the seekbars to simulate race
-        animateRace();
+
+        // Resume or start the race animations
+        if (animator1 == null || animator2 == null || animator3 == null) {
+            // First time - create new animations
+            animateRace();
+        } else {
+            // Resume paused animations
+            if (animator1.isPaused()) animator1.resume();
+            if (animator2.isPaused()) animator2.resume();
+            if (animator3.isPaused()) animator3.resume();
+        }
     }
     
     /**
@@ -430,12 +442,12 @@ public class MainActivity extends AppCompatActivity {
             checkBox3.setEnabled(false);
         }
     }
-    
+
     private void pauseRace() {
         // Pause the timer
         timerHandler.removeCallbacks(timerRunnable);
-        
-        // Pause the animations
+
+        // Pause the animations (don't cancel them)
         if (animator1 != null && animator1.isRunning()) {
             animator1.pause();
         }
@@ -445,6 +457,9 @@ public class MainActivity extends AppCompatActivity {
         if (animator3 != null && animator3.isRunning()) {
             animator3.pause();
         }
+
+        // Pause background music
+        AudioManager.getInstance().pauseMusic();
     }
     
     private void resetRace() {
