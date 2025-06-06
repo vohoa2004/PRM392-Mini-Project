@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private int volumeLevel = 80; // Default volume level (0-100)
     private boolean vibrationEnabled = true;
     private int difficultyLevel = 1; // 0: Easy, 1: Normal, 2: Hard
-    
+
     private boolean[] selectedAnimals;
     private int betAmount = 0;
     private int currentPoints = 0;
@@ -559,18 +559,10 @@ public class MainActivity extends AppCompatActivity {
             // Reset play button state
             isPlaying = false;
             btnPlayPause.setImageResource(R.drawable.play);
-            
-            // Check if player won
-            boolean playerWon = false;
-            
-            if (animalPosition == 0 && checkBox1.isChecked()) {
-                playerWon = true;
-            } else if (animalPosition == 1 && checkBox2.isChecked()) {
-                playerWon = true;
-            } else if (animalPosition == 2 && checkBox3.isChecked()) {
-                playerWon = true;
-            }
-            
+
+            int winningAnimalIndex = raceAnimalIndices[animalPosition];
+            boolean playerWon = selectedAnimals != null && selectedAnimals.length > winningAnimalIndex && selectedAnimals[winningAnimalIndex];
+
             // Change to ending music - force restart to ensure sound plays every time
             AudioManager.getInstance().playMusic(this, AudioManager.ENDING_MUSIC, false, true);
             
@@ -712,34 +704,31 @@ public class MainActivity extends AppCompatActivity {
         String resultMessage;
         
         // Apply difficulty multiplier to bet amount
-        int multiplier = 1;
+        int multiplier;
         switch (difficultyLevel) {
-            case 0: // Easy
-                multiplier = 1;
-                break;
-            case 1: // Normal
-                multiplier = 2;
-                break;
-            case 2: // Hard
-                multiplier = 3;
-                break;
+            case 0: multiplier = 1; break;
+            case 1: multiplier = 2; break;
+            case 2: multiplier = 3; break;
+            default: multiplier = 1;
         }
         
         // Count the number of characters the user bet on
         int totalBets = 0;
-        for (int i = 0; i < selectedAnimals.length; i++) {
-            if (selectedAnimals[i]) {
-                totalBets++;
-            }
+        for (boolean selected : selectedAnimals) {
+            if (selected) totalBets++;
         }
-        
-        // Calculate total amount bet (betAmount per character)
         int totalBetAmount = betAmount * totalBets;
         
         // Update points based on win/loss
         if (playerWon) {
             // User loses points for all bets but gains points for the winning character
-            pointsChange = (betAmount * multiplier) - totalBetAmount;
+            int winningAnimalIndex = raceAnimalIndices[winningAnimalPosition];
+            int winCount = 0;
+            if (selectedAnimals[winningAnimalIndex]) {
+                winCount++;
+            }
+
+            pointsChange = (winCount * betAmount * multiplier) - totalBetAmount;
             currentPoints += pointsChange;
             resultMessage = "Chúc mừng! Bạn đã thắng";
         } else {
